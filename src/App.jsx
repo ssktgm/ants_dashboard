@@ -70,11 +70,11 @@ const parseDate = (dateStr) => {
 // --- Components ---
 
 const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-lg shadow p-4 ${className}`}>{children}</div>
+  <div className={`bg-white rounded-xl shadow-md p-4 ${className}`}>{children}</div>
 );
 
 const StatCard = ({ title, value, subValue, icon: Icon, color = "blue" }) => (
-  <Card className="flex items-center space-x-4 border-l-4" style={{ borderLeftColor: `var(--color-${color}-500)` }}>
+  <Card className={`flex items-center space-x-4 border-l-4 border-primary-500`}>
     <div className={`p-3 rounded-full bg-${color}-100 text-${color}-600`}>
       <Icon size={24} />
     </div>
@@ -612,13 +612,13 @@ export default function App() {
   const ImportSection = () => (
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
       <div className="text-center">
-        <Database className="mx-auto h-12 w-12 text-blue-500" />
+        <Database className="mx-auto h-12 w-12 text-primary-500" />
         <h3 className="mt-2 text-lg font-medium text-gray-900">データをインポート</h3>
         <p className="mt-1 text-sm text-gray-500">
           `scorer_stats_raw_*.csv` ファイルを選択してください。（複数選択可）
         </p>
         <div className="mt-6 flex justify-center flex-col items-center gap-4">
-          <label className="relative cursor-pointer bg-blue-600 rounded-md font-medium text-white hover:bg-blue-700 px-6 py-2 shadow-sm transition-all">
+          <label className="relative cursor-pointer bg-primary-600 rounded-md font-medium text-white hover:bg-primary-700 px-6 py-2 shadow-sm transition-all">
             <span>ファイルを選択</span>
             <input 
               id="file-upload" 
@@ -626,7 +626,7 @@ export default function App() {
               onChange={handleFileUpload}
             />
           </label>
-          {importStatus && <span className="text-sm text-blue-600 font-semibold animate-pulse">{importStatus}</span>}
+          {importStatus && <span className="text-sm text-primary-600 font-semibold animate-pulse">{importStatus}</span>}
         </div>
         
         <div className="mt-8">
@@ -659,7 +659,7 @@ export default function App() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="h-96">
+        <Card className="h-96 flex flex-col">
           <h3 className="text-lg font-bold text-gray-700 mb-4">月別チーム成績推移</h3>
           <ResponsiveContainer width="100%" height="90%">
             <ComposedChart data={monthlyBattingTrend}>
@@ -675,7 +675,7 @@ export default function App() {
           </ResponsiveContainer>
         </Card>
 
-        <Card className="h-96">
+        <Card className="h-96 flex flex-col">
             <h3 className="text-lg font-bold text-gray-700 mb-2">打撃タイプ分析 (OPS)</h3>
             <p className="text-xs text-gray-400 mb-4">※5打席以上の選手を表示。円の大きさはOPS。</p>
             <ResponsiveContainer width="100%" height="90%">
@@ -729,13 +729,13 @@ export default function App() {
                         <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
                             <button 
                                 onClick={() => setComparisonChartType('ranking')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'ranking' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'ranking' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 ランキング
                             </button>
                             <button 
                                 onClick={() => setComparisonChartType('scatter')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'scatter' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'scatter' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 相関分析
                             </button>
@@ -815,7 +815,7 @@ export default function App() {
                               <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 11}} interval={0} />
                               <RechartsTooltip cursor={{fill: 'transparent'}} />
                               <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20}>
-                                  <LabelList dataKey="displayValue" position="right" />
+                                  <LabelList dataKey="displayValue" position="right" style={{ fill: '#374151', fontSize: '12px' }}/>
                               </Bar>
                           </BarChart>
                       </ResponsiveContainer>
@@ -983,13 +983,13 @@ export default function App() {
                       <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
                           <button 
                               onClick={() => setTrendTarget('team')}
-                              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${trendTarget === 'team' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${trendTarget === 'team' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                           >
                               チーム推移
                           </button>
                           <button 
                               onClick={() => setTrendTarget('player')}
-                              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${trendTarget === 'player' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${trendTarget === 'player' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                           >
                               個人推移
                           </button>
@@ -1010,7 +1010,7 @@ export default function App() {
                               <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
                                 <button 
                                     onClick={() => setTrendType('batting')}
-                                    className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${trendType === 'batting' ? 'bg-blue-500 text-white shadow' : 'text-gray-500 hover:bg-gray-200'}`}
+                                    className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${trendType === 'batting' ? 'bg-primary-500 text-white shadow' : 'text-gray-500 hover:bg-gray-200'}`}
                                 >
                                     打撃
                                 </button>
@@ -1093,7 +1093,7 @@ export default function App() {
                 <thead className="bg-gray-50">
                 <tr>
                     {headers.map(h => (
-                    <th key={h.k} onClick={() => requestSort(h.k)} className={`px-3 py-3 text-left font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${sortConfig.key === h.k ? 'bg-gray-100 text-blue-600' : ''}`}>
+                    <th key={h.k} onClick={() => requestSort(h.k)} className={`px-3 py-3 text-left font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${sortConfig.key === h.k ? 'bg-gray-100 text-primary-600' : ''}`}>
                         {h.l}
                     </th>
                     ))}
@@ -1108,7 +1108,7 @@ export default function App() {
                     <td className="px-3 py-2 text-gray-600">{row.pa}</td>
                     <td className="px-3 py-2 text-gray-600">{row.ab}</td>
                     <td className="px-3 py-2 text-gray-900 font-bold">{row.h}</td>
-                    <td className="px-3 py-2 text-pink-600 font-bold">{row.hr}</td>
+                    <td className="px-3 py-2 text-rose-600 font-bold">{row.hr}</td>
                     <td className="px-3 py-2 text-blue-600">{row.rbi}</td>
                     <td className="px-3 py-2 text-green-600">{row.sb}</td>
                     <td className="px-3 py-2 text-gray-400">{row.bb}</td>
@@ -1167,7 +1167,7 @@ export default function App() {
                 <thead className="bg-gray-50">
                 <tr>
                     {headers.map(h => (
-                    <th key={h.k} onClick={() => requestSort(h.k)} className={`px-3 py-3 text-left font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${sortConfig.key === h.k ? 'bg-gray-100 text-blue-600' : ''}`}>
+                    <th key={h.k} onClick={() => requestSort(h.k)} className={`px-3 py-3 text-left font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${sortConfig.key === h.k ? 'bg-gray-100 text-primary-600' : ''}`}>
                         {h.l}
                     </th>
                     ))}
@@ -1200,24 +1200,24 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-gray-800">
-      <header className="bg-blue-900 text-white shadow-lg sticky top-0 z-10">
+      <header className="bg-primary-900 text-white shadow-lg sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
               <Award className="h-8 w-8 text-yellow-400" />
               <h1 className="text-xl font-bold tracking-tight">少年野球Stats Manager</h1>
             </div>
-            <div className="flex space-x-1 overflow-x-auto">
-              <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800'}`}>ホーム</button>
-              <button onClick={() => setActiveTab('batting')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'batting' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800'}`}>打撃成績</button>
-              <button onClick={() => setActiveTab('pitching')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'pitching' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800'}`}>投手成績</button>
-              <button onClick={() => setActiveTab('trends')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'trends' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800'} flex items-center`}>
+            <div className="hidden md:flex space-x-1">
+              <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>ホーム</button>
+              <button onClick={() => setActiveTab('batting')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'batting' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>打撃成績</button>
+              <button onClick={() => setActiveTab('pitching')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'pitching' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>投手成績</button>
+              <button onClick={() => setActiveTab('trends')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'trends' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'} flex items-center`}>
                   <LineChartIcon className="w-4 h-4 mr-1"/>推移
               </button>
-              <button onClick={() => setActiveTab('comparison')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'comparison' ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-800'} flex items-center`}>
+              <button onClick={() => setActiveTab('comparison')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'comparison' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'} flex items-center`}>
                   <BarChart2 className="w-4 h-4 mr-1"/>分析・比較
               </button>
-              <button onClick={() => setActiveTab('settings')} className={`ml-4 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-blue-700 hover:bg-blue-600 text-white flex items-center`}><Save className="w-4 h-4 mr-1" />データ管理</button>
+              <button onClick={() => setActiveTab('settings')} className={`ml-4 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-primary-700 hover:bg-primary-600 text-white flex items-center`}><Save className="w-4 h-4 mr-1" />データ管理</button>
             </div>
           </div>
         </div>
@@ -1226,10 +1226,10 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!lastUpdated && activeTab !== 'settings' && (
            <div className="bg-white rounded-lg shadow-xl p-8 text-center max-w-2xl mx-auto mt-10">
-             <div className="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"><Upload className="text-blue-600 w-10 h-10" /></div>
+             <div className="bg-primary-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"><Upload className="text-primary-600 w-10 h-10" /></div>
              <h2 className="text-2xl font-bold text-gray-800 mb-2">データがありません</h2>
              <p className="text-gray-500 mb-6">まずは「データ管理」からCSVファイルをインポートしてください。<br/>成績データをドラッグ＆ドロップで読み込めます。</p>
-             <button onClick={() => setActiveTab('settings')} className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-blue-700 transition-colors">データをインポートする</button>
+             <button onClick={() => setActiveTab('settings')} className="bg-primary-600 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-primary-700 transition-colors">データをインポートする</button>
            </div>
         )}
 
