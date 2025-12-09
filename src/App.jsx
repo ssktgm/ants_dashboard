@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line, ComposedChart, ScatterChart, Scatter, ZAxis, ReferenceLine, LabelList
 } from 'recharts';
-import { Upload, Database, TrendingUp, Activity, Save, Trash2, Filter, AlertCircle, Award, Search, Calendar, RefreshCw, LineChart as LineChartIcon, BarChart2 } from 'lucide-react';
+import { Upload, Database, TrendingUp, Activity, Save, Trash2, Filter, AlertCircle, Award, Search, Calendar, RefreshCw, LineChart as LineChartIcon, BarChart2, Menu, X } from 'lucide-react';
 
 // --- Default Data (Import from files) ---
 import DEFAULT_BATTING_CSV_URL from './data/scorer_stats_raw_b.csv?url';
@@ -88,6 +88,7 @@ const StatCard = ({ title, value, subValue, icon: Icon, color = "blue" }) => (
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [battingData, setBattingData] = useState([]);
   const [pitchingData, setPitchingData] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -1207,20 +1208,46 @@ export default function App() {
               <Award className="h-8 w-8 text-yellow-400" />
               <h1 className="text-xl font-bold tracking-tight">少年野球Stats Manager</h1>
             </div>
-            <div className="hidden md:flex space-x-1">
-              <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>ホーム</button>
-              <button onClick={() => setActiveTab('batting')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'batting' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>打撃成績</button>
-              <button onClick={() => setActiveTab('pitching')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'pitching' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>投手成績</button>
-              <button onClick={() => setActiveTab('trends')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'trends' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'} flex items-center`}>
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center space-x-1">
+              <button onClick={() => handleNavClick('dashboard')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>ホーム</button>
+              <button onClick={() => handleNavClick('batting')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'batting' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>打撃成績</button>
+              <button onClick={() => handleNavClick('pitching')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'pitching' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>投手成績</button>
+              <button onClick={() => handleNavClick('trends')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'trends' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'} flex items-center`}>
                   <LineChartIcon className="w-4 h-4 mr-1"/>推移
               </button>
-              <button onClick={() => setActiveTab('comparison')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'comparison' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'} flex items-center`}>
+              <button onClick={() => handleNavClick('comparison')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'comparison' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'} flex items-center`}>
                   <BarChart2 className="w-4 h-4 mr-1"/>分析・比較
               </button>
-              <button onClick={() => setActiveTab('settings')} className={`ml-4 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-primary-700 hover:bg-primary-600 text-white flex items-center`}><Save className="w-4 h-4 mr-1" />データ管理</button>
+              <button onClick={() => handleNavClick('settings')} className={`ml-4 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-primary-700 hover:bg-primary-600 text-white flex items-center`}><Save className="w-4 h-4 mr-1" />データ管理</button>
+            </div>
+            {/* Hamburger Button */}
+            <div className="md:hidden flex items-center">
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="inline-flex items-center justify-center p-2 rounded-md text-primary-200 hover:text-white hover:bg-primary-800 focus:outline-none">
+                <span className="sr-only">Open main menu</span>
+                {isMenuOpen ? (
+                  <X className="block h-6 w-6" aria-hidden="true" />
+                ) : (
+                  <Menu className="block h-6 w-6" aria-hidden="true" />
+                )}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+              <button onClick={() => handleNavClick('dashboard')} className={`w-full text-left block px-3 py-2 rounded-md text-base font-medium ${activeTab === 'dashboard' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>ホーム</button>
+              <button onClick={() => handleNavClick('batting')} className={`w-full text-left block px-3 py-2 rounded-md text-base font-medium ${activeTab === 'batting' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>打撃成績</button>
+              <button onClick={() => handleNavClick('pitching')} className={`w-full text-left block px-3 py-2 rounded-md text-base font-medium ${activeTab === 'pitching' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}>投手成績</button>
+              <button onClick={() => handleNavClick('trends')} className={`w-full text-left flex items-center px-3 py-2 rounded-md text-base font-medium ${activeTab === 'trends' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}><LineChartIcon className="w-5 h-5 mr-2"/>推移</button>
+              <button onClick={() => handleNavClick('comparison')} className={`w-full text-left flex items-center px-3 py-2 rounded-md text-base font-medium ${activeTab === 'comparison' ? 'bg-primary-800 text-white' : 'text-primary-100 hover:bg-primary-800'}`}><BarChart2 className="w-5 h-5 mr-2"/>分析・比較</button>
+              <button onClick={() => handleNavClick('settings')} className={`w-full text-left flex items-center mt-2 px-3 py-2 rounded-md text-base font-medium bg-primary-700 hover:bg-primary-600 text-white`}><Save className="w-5 h-5 mr-2" />データ管理</button>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1229,7 +1256,7 @@ export default function App() {
              <div className="bg-primary-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"><Upload className="text-primary-600 w-10 h-10" /></div>
              <h2 className="text-2xl font-bold text-gray-800 mb-2">データがありません</h2>
              <p className="text-gray-500 mb-6">まずは「データ管理」からCSVファイルをインポートしてください。<br/>成績データをドラッグ＆ドロップで読み込めます。</p>
-             <button onClick={() => setActiveTab('settings')} className="bg-primary-600 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-primary-700 transition-colors">データをインポートする</button>
+             <button onClick={() => handleNavClick('settings')} className="bg-primary-600 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-primary-700 transition-colors">データをインポートする</button>
            </div>
         )}
 
