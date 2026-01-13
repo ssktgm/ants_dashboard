@@ -461,8 +461,7 @@ export default function App() {
         p.hr += (row['本塁打'] || 0);
     });
     
-    return Object.values(periods).sort((a, b) => a.month.localeCompare(b.month)).map(m => {
-       const avg = safeDiv(m.h, m.ab);
+    return Object.values(periods).sort((a, b) => new Date(a.month) - new Date(b.month)).map(m => {
        const obp = safeDiv(m.h + m.bb + m.hbp, m.ab + m.bb + m.hbp + m.sf);
        const slg = safeDiv((m.h - m.doubles - m.triples - m.hr) + m.doubles*2 + m.triples*3 + m.hr*4, m.ab);
        return { ...m, avg: Number(avg.toFixed(3)), ops: Number((obp + slg).toFixed(3)) };
@@ -485,7 +484,7 @@ export default function App() {
         p.pitches += (row['球数'] || 0);
     });
     
-    return Object.values(periods).sort((a, b) => a.month.localeCompare(b.month)).map(m => {
+    return Object.values(periods).sort((a, b) => new Date(a.month) - new Date(b.month)).map(m => {
         const strikeRate = safeDiv(m.s, m.pitches) * 100;
         return { ...m, bbhbp: m.bb + m.hbp, strikeRate: Number(strikeRate.toFixed(1)) };
     });
@@ -542,6 +541,10 @@ export default function App() {
             if (dateA.getTime() !== dateB.getTime()) {
                 return dateA - dateB;
             }
+            return a.periodKey.localeCompare(b.periodKey); // Keep for same-day games
+        }
+        if (trendPeriod === 'monthly') {
+            return new Date(a.periodKey) - new Date(b.periodKey);
         }
         return a.periodKey.localeCompare(b.periodKey);
     }).map(m => {
@@ -585,6 +588,10 @@ export default function App() {
             if (dateA.getTime() !== dateB.getTime()) {
                 return dateA - dateB;
             }
+            return a.periodKey.localeCompare(b.periodKey); // Keep for same-day games
+        }
+        if (trendPeriod === 'monthly') {
+            return new Date(a.periodKey) - new Date(b.periodKey);
         }
         return a.periodKey.localeCompare(b.periodKey);
     }).map(m => {
@@ -685,19 +692,12 @@ export default function App() {
         }
     };
 
-    const rows = filteredBattingData.filter(r => (r['選手ID'] || r['名前']) === selectedPlayerId);
-    
-    const grouped = {};
-    rows.forEach(row => {
-        const key = getKey(row, trendPeriod);
-        if (!key) return;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(row);
-    });
-
     const sortedKeys = Object.keys(grouped).sort((a, b) => {
         if (trendPeriod === 'game') {
             return parseDate(a) - parseDate(b);
+        }
+        if (trendPeriod === 'monthly') {
+            return new Date(a) - new Date(b);
         }
         return a.localeCompare(b);
     });
@@ -789,6 +789,9 @@ export default function App() {
     const sortedKeys = Object.keys(grouped).sort((a, b) => {
         if (trendPeriod === 'game') {
             return parseDate(a) - parseDate(b);
+        }
+        if (trendPeriod === 'monthly') {
+            return new Date(a) - new Date(b);
         }
         return a.localeCompare(b);
     });
