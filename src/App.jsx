@@ -793,7 +793,12 @@ export default function App() {
 
         switch (period) {
             case 'game':
-                return row['日付'];
+                const homeTeam = row['後攻'] || '';
+                const awayTeam = row['先攻'] || '';
+                const isHomeArinko = homeTeam.includes('ありんこ') || homeTeam.includes('アントス');
+                const opponent = isHomeArinko ? awayTeam : homeTeam;
+                const formattedDate = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+                return `${formattedDate} vs ${opponent || '不明'}`;
             case 'quarterly':
                 const quarter = Math.floor(month / 3) + 1;
                 return `${year}-Q${quarter}`;
@@ -803,9 +808,26 @@ export default function App() {
         }
     };
 
+    const rows = filteredBattingData.filter(r => (r['選手ID'] || r['名前']) === selectedPlayerId);
+    
+    const grouped = {};
+    rows.forEach(row => {
+        const key = getKey(row, trendPeriod);
+        if (!key) return;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(row);
+    });
+
     const sortedKeys = Object.keys(grouped).sort((a, b) => {
         if (trendPeriod === 'game') {
-            return new Date(a) - new Date(b);
+            const dateA = parseDate(a.split(' vs ')[0]);
+            const dateB = parseDate(b.split(' vs ')[0]);
+            const timeA = dateA.getTime();
+            const timeB = dateB.getTime();
+            if (timeA !== timeB) {
+                return timeA - timeB;
+            }
+            return a.localeCompare(b);
         }
         if (trendPeriod === 'monthly') {
             return new Date(a) - new Date(b);
@@ -877,7 +899,12 @@ export default function App() {
 
         switch (period) {
             case 'game':
-                return row['日付'];
+                const homeTeam = row['後攻'] || '';
+                const awayTeam = row['先攻'] || '';
+                const isHomeArinko = homeTeam.includes('ありんこ') || homeTeam.includes('アントス');
+                const opponent = isHomeArinko ? awayTeam : homeTeam;
+                const formattedDate = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+                return `${formattedDate} vs ${opponent || '不明'}`;
             case 'quarterly':
                 const quarter = Math.floor(month / 3) + 1;
                 return `${year}-Q${quarter}`;
@@ -899,67 +926,198 @@ export default function App() {
 
     const sortedKeys = Object.keys(grouped).sort((a, b) => {
         if (trendPeriod === 'game') {
-            return new Date(a) - new Date(b);
+            const dateA = parseDate(a.split(' vs ')[0]);
+            const dateB = parseDate(b.split(' vs ')[0]);
+            const timeA = dateA.getTime();
+            const timeB = dateB.getTime();
+            if (timeA !== timeB) {
+                return timeA - timeB;
+            }
+            return a.localeCompare(b);
         }
         if (trendPeriod === 'monthly') {
             return new Date(a) - new Date(b);
         }
         return a.localeCompare(b);
     });
+  //   const playerBattingTrendData = useMemo(() => {
+//     if (!selectedPlayerId || trendTarget !== 'player' || trendType !== 'batting') return [];
 
-    let cumulative = { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0 };
+//     const getKey = (row, period) => {
+//         const d = parseDate(row['日付']);
+//         if (isNaN(d.getTime())) return null;
+//         const year = d.getFullYear();
+//         const month = d.getMonth();
+
+//         switch (period) {
+//             case 'game':
+//                 return row['日付'];
+//             case 'quarterly':
+//                 const quarter = Math.floor(month / 3) + 1;
+//                 return `${year}-Q${quarter}`;
+//             case 'monthly':
+//             default:
+//                 return `${year}-${(month + 1).toString().padStart(2, '0')}`;
+//         }
+//     };
+
+//     const sortedKeys = Object.keys(grouped).sort((a, b) => {
+//         if (trendPeriod === 'game') {
+//             return new Date(a) - new Date(b);
+//         }
+//         if (trendPeriod === 'monthly') {
+//             return new Date(a) - new Date(b);
+//         }
+//         return a.localeCompare(b);
+//     });
+
+//     let cumulative = { ab: 0, h: 0, bb: 0, hbp: 0, sf: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, sb: 0, so: 0 };
     
-    return sortedKeys.map(key => {
-        const periodRows = grouped[key];
-        const periodStats = periodRows.reduce((acc, row) => {
-            acc.outs += (row['アウト数'] || 0);
-            acc.er += (row['自責点'] || 0);
-            acc.bb += (row['四球'] || 0);
-            acc.hbp += (row['死球'] || 0);
-            acc.h += (row['安打'] || 0);
-            acc.so += (row['三振'] || 0);
-            acc.pitches += (row['球数'] || 0);
-            acc.strikes += (row['S数'] || 0);
-            return acc;
-        }, { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0, pitches: 0, strikes: 0 });
+//     return sortedKeys.map(key => {
+//         const periodRows = grouped[key];
+//         const periodStats = periodRows.reduce((acc, row) => {
+//             acc.ab += (row['打数'] || 0);
+//             acc.h += (row['安打'] || 0);
+//             acc.bb += (row['四球'] || 0);
+//             acc.hbp += (row['死球'] || 0);
+//             acc.sf += (row['犠飛'] || 0);
+//             acc.doubles += (row['二塁打'] || 0);
+//             acc.triples += (row['三塁打'] || 0);
+//             acc.hr += (row['本塁打'] || 0);
+//             acc.so += (row['三振'] || 0);
+//             acc.rbi += (row['打点'] || 0);
+//             return acc;
+//         }, { ab: 0, h: 0, bb: 0, hbp: 0, sf: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, so: 0 });
 
-        Object.keys(cumulative).forEach(statKey => {
-            cumulative[statKey] += periodStats[statKey];
-        });
+//         Object.keys(periodStats).forEach(statKey => {
+//             cumulative[statKey] += periodStats[statKey];
+//         });
 
-        const era = safeDiv(cumulative.er * 7, cumulative.outs / 3);
-        const whip = safeDiv(cumulative.bb + cumulative.hbp + cumulative.h, cumulative.outs / 3);
-        const kbb = safeDiv(cumulative.so, cumulative.bb);
-        const kPer7 = safeDiv(cumulative.so * 7, cumulative.outs / 3);
-        const bbPer7 = safeDiv((cumulative.bb + cumulative.hbp) * 7, cumulative.outs / 3);
+//         const avg = safeDiv(cumulative.h, cumulative.ab);
+//         const obp = safeDiv(cumulative.h + cumulative.bb + cumulative.hbp, cumulative.ab + cumulative.bb + cumulative.hbp + cumulative.sf);
+//         const singles = cumulative.h - cumulative.doubles - cumulative.triples - cumulative.hr;
+//         const tb = singles + cumulative.doubles*2 + cumulative.triples*3 + cumulative.hr*4;
+//         const pa = cumulative.ab + cumulative.bb + cumulative.hbp + cumulative.sf;
+//         const soRate = safeDiv(cumulative.so, pa) * 100;
+//         const bbRate = safeDiv(cumulative.bb + cumulative.hbp, pa) * 100;
+//         const slg = safeDiv(tb, cumulative.ab);
 
-        const innings = periodStats.outs / 3;
-        const strikeRate = safeDiv(periodStats.strikes, periodStats.pitches) * 100;
+//         let opponent = '';
+//         if (trendPeriod === 'game' && periodRows.length > 0) {
+//             const row = periodRows[0];
+//             const homeTeam = row['後攻'] || '';
+//             const awayTeam = row['先攻'] || '';
+//             const isHomeArinko = homeTeam.includes('ありんこ') || homeTeam.includes('アントス');
+//             opponent = isHomeArinko ? awayTeam : homeTeam;
+//         }
+
+//         return {
+//             periodKey: key,
+//             opponent: opponent,
+//             avg: Number(avg.toFixed(3)),
+//             ops: Number((obp + slg).toFixed(3)),
+//             slg: Number(slg.toFixed(3)),
+//             obp: Number(obp.toFixed(3)),
+//             bbRate: Number(bbRate.toFixed(1)),
+//             soRate: Number(soRate.toFixed(1)),
+//             ...periodStats
+//         };
+//     });
+//   }, [filteredBattingData, selectedPlayerId, trendTarget, trendType, trendPeriod]);
+
+//   const playerPitchingTrendData = useMemo(() => {
+//     if (!selectedPlayerId || trendTarget !== 'player' || trendType !== 'pitching') return [];
+//     const getKey = (row, period) => {
+//         const d = parseDate(row['日付']);
+//         if (isNaN(d.getTime())) return null;
+//         const year = d.getFullYear();
+//         const month = d.getMonth();
+
+//         switch (period) {
+//             case 'game':
+//                 return row['日付'];
+//             case 'quarterly':
+//                 const quarter = Math.floor(month / 3) + 1;
+//                 return `${year}-Q${quarter}`;
+//             case 'monthly':
+//             default:
+//                 return `${year}-${(month + 1).toString().padStart(2, '0')}`;
+//         }
+//     };
+
+//     const rows = filteredPitchingData.filter(r => (r['選手ID'] || r['名前']) === selectedPlayerId);
+    
+//     const grouped = {};
+//     rows.forEach(row => {
+//         const key = getKey(row, trendPeriod);
+//         if (!key) return;
+//         if (!grouped[key]) grouped[key] = [];
+//         grouped[key].push(row);
+//     });
+
+//     const sortedKeys = Object.keys(grouped).sort((a, b) => {
+//         if (trendPeriod === 'game') {
+//             return new Date(a) - new Date(b);
+//         }
+//         if (trendPeriod === 'monthly') {
+//             return new Date(a) - new Date(b);
+//         }
+//         return a.localeCompare(b);
+//     });
+
+//     let cumulative = { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0 };
+    
+//     return sortedKeys.map(key => {
+//         const periodRows = grouped[key];
+//         const periodStats = periodRows.reduce((acc, row) => {
+//             acc.outs += (row['アウト数'] || 0);
+//             acc.er += (row['自責点'] || 0);
+//             acc.bb += (row['四球'] || 0);
+//             acc.hbp += (row['死球'] || 0);
+//             acc.h += (row['安打'] || 0);
+//             acc.so += (row['三振'] || 0);
+//             acc.pitches += (row['球数'] || 0);
+//             acc.strikes += (row['S数'] || 0);
+//             return acc;
+//         }, { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0, pitches: 0, strikes: 0 });
+
+//         Object.keys(cumulative).forEach(statKey => {
+//             cumulative[statKey] += periodStats[statKey];
+//         });
+
+//         const era = safeDiv(cumulative.er * 7, cumulative.outs / 3);
+//         const whip = safeDiv(cumulative.bb + cumulative.hbp + cumulative.h, cumulative.outs / 3);
+//         const kbb = safeDiv(cumulative.so, cumulative.bb);
+//         const kPer7 = safeDiv(cumulative.so * 7, cumulative.outs / 3);
+//         const bbPer7 = safeDiv((cumulative.bb + cumulative.hbp) * 7, cumulative.outs / 3);
+
+//         const innings = periodStats.outs / 3;
+//         const strikeRate = safeDiv(periodStats.strikes, periodStats.pitches) * 100;
         
-        let opponent = '';
-        if (trendPeriod === 'game' && periodRows.length > 0) {
-            const row = periodRows[0];
-            const homeTeam = row['後攻'] || '';
-            const awayTeam = row['先攻'] || '';
-            const isHomeArinko = homeTeam.includes('ありんこ') || homeTeam.includes('アントス');
-            opponent = isHomeArinko ? awayTeam : homeTeam;
-        }
+//         let opponent = '';
+//         if (trendPeriod === 'game' && periodRows.length > 0) {
+//             const row = periodRows[0];
+//             const homeTeam = row['後攻'] || '';
+//             const awayTeam = row['先攻'] || '';
+//             const isHomeArinko = homeTeam.includes('ありんこ') || homeTeam.includes('アントス');
+//             opponent = isHomeArinko ? awayTeam : homeTeam;
+//         }
 
-        return {
-            periodKey: key,
-            opponent: opponent,
-            era: Number(era.toFixed(2)),
-            whip: Number(whip.toFixed(2)),
-            kbb: Number(kbb.toFixed(2)),
-            innings: Number(innings.toFixed(1)),
-            kPer7: Number(kPer7.toFixed(2)),
-            bbPer7: Number(bbPer7.toFixed(2)),
-            strikeRate: Number(strikeRate.toFixed(1)),
-            bb: periodStats.bb,
-            hbp: periodStats.hbp,
-            pitches: periodStats.pitches
-        };
-    });
+//         return {
+//             periodKey: key,
+//             opponent: opponent,
+//             era: Number(era.toFixed(2)),
+//             whip: Number(whip.toFixed(2)),
+//             kbb: Number(kbb.toFixed(2)),
+//             innings: Number(innings.toFixed(1)),
+//             kPer7: Number(kPer7.toFixed(2)),
+//             bbPer7: Number(bbPer7.toFixed(2)),
+//             strikeRate: Number(strikeRate.toFixed(1)),
+//             bb: periodStats.bb,
+//             hbp: periodStats.hbp,
+//             pitches: periodStats.pitches
+//         };
+//     });
   }, [filteredPitchingData, selectedPlayerId, trendTarget, trendType, trendPeriod]);
 
   // --- Comparison & Ranking Logic ---
