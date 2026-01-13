@@ -103,16 +103,25 @@ export default function App() {
   // Home view state
   const [showHomeScatterLabels, setShowHomeScatterLabels] = useState(false);
 
-  // Filter State
-  const [activeFilters, setActiveFilters] = useState({
+  const defaultFilters = useMemo(() => ({
     startDate: '2025-10-01',
     endDate: '',
     teamKeyword: '', 
     category: 'all', 
-  });
-  const [draftFilters, setDraftFilters] = useState(activeFilters);
+  }), []);
 
-  useEffect(() => { setDraftFilters({...activeFilters}) }, [activeFilters]);
+  const clearedFilters = useMemo(() => ({
+    startDate: '',
+    endDate: '',
+    teamKeyword: '', 
+    category: 'all', 
+  }), []);
+
+  // Filter State
+  const [activeFilters, setActiveFilters] = useState(defaultFilters);
+  const [draftFilters, setDraftFilters] = useState(defaultFilters);
+
+  useEffect(() => { setDraftFilters(activeFilters) }, [activeFilters]);
 
   // Trends/Analysis State
   const [trendTarget, setTrendTarget] = useState('team'); 
@@ -280,15 +289,6 @@ export default function App() {
   const handleNavClick = (tab) => {
     setActiveTab(tab);
     setIsMenuOpen(false);
-  };
-
-  const resetFilters = () => {
-      setActiveFilters({
-        startDate: '',
-        endDate: '',
-        teamKeyword: '',
-        category: 'all',
-      });
   };
 
   // --- Filtering Logic ---
@@ -971,7 +971,13 @@ export default function App() {
                     適用
                 </button>
                 <button 
-                    onClick={resetFilters}
+                    onClick={() => setDraftFilters(clearedFilters)}
+                    className="flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+                >
+                    クリア
+                </button>
+                <button 
+                    onClick={() => setDraftFilters(defaultFilters)}
                     className="flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
                 >
                     <RefreshCw size={14} className="mr-2" />
