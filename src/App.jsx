@@ -535,7 +535,16 @@ export default function App() {
         p.sb += (row['盗塁'] || 0);
     });
     
-    const battingResult = Object.values(battingPeriods).sort((a, b) => a.periodKey.localeCompare(b.periodKey)).map(m => {
+    const battingResult = Object.values(battingPeriods).sort((a, b) => {
+        if (trendPeriod === 'game') {
+            const dateA = parseDate(a.periodKey.split(' vs ')[0]);
+            const dateB = parseDate(b.periodKey.split(' vs ')[0]);
+            if (dateA.getTime() !== dateB.getTime()) {
+                return dateA - dateB;
+            }
+        }
+        return a.periodKey.localeCompare(b.periodKey);
+    }).map(m => {
        const avg = safeDiv(m.h, m.ab);
        const obp = safeDiv(m.h + m.bb + m.hbp, m.ab + m.bb + m.hbp + m.sf);
        const slg = safeDiv((m.h - m.doubles - m.triples - m.hr) + m.doubles*2 + m.triples*3 + m.hr*4, m.ab);
@@ -569,7 +578,16 @@ export default function App() {
         p.pitches += (row['球数'] || 0);
     });
     
-    const pitchingResult = Object.values(pitchingPeriods).sort((a, b) => a.periodKey.localeCompare(b.periodKey)).map(m => {
+    const pitchingResult = Object.values(pitchingPeriods).sort((a, b) => {
+        if (trendPeriod === 'game') {
+            const dateA = parseDate(a.periodKey.split(' vs ')[0]);
+            const dateB = parseDate(b.periodKey.split(' vs ')[0]);
+            if (dateA.getTime() !== dateB.getTime()) {
+                return dateA - dateB;
+            }
+        }
+        return a.periodKey.localeCompare(b.periodKey);
+    }).map(m => {
         const innings = m.outs / 3;
         const era = safeDiv(m.er * 7, innings);
         const whip = safeDiv(m.h + m.bb + m.hbp, innings);
