@@ -749,7 +749,14 @@ export default function App() {
         }
     });
 
-    const sortedGames = Array.from(gamesMap.values()).sort((a, b) => parseDate(a.date) - parseDate(b.date));
+    const sortedGames = Array.from(gamesMap.values()).sort((a, b) => {
+      const dateA = parseDate(a.date);
+      const dateB = parseDate(b.date);
+      if (dateA.getTime() !== dateB.getTime()) {
+        return dateA.getTime() - dateB.getTime();
+      }
+      return a.opponent.localeCompare(b.opponent);
+    });
 
     let wins = 0;
     let gamesPlayed = 0;
