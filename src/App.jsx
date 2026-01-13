@@ -538,8 +538,10 @@ export default function App() {
         if (trendPeriod === 'game') {
             const dateA = parseDate(a.periodKey.split(' vs ')[0]);
             const dateB = parseDate(b.periodKey.split(' vs ')[0]);
-            if (dateA.getTime() !== dateB.getTime()) {
-                return dateA - dateB;
+            const timeA = dateA.getTime();
+            const timeB = dateB.getTime();
+            if (timeA !== timeB) {
+                return timeA - timeB;
             }
             return a.periodKey.localeCompare(b.periodKey); // Keep for same-day games
         }
@@ -585,8 +587,10 @@ export default function App() {
         if (trendPeriod === 'game') {
             const dateA = parseDate(a.periodKey.split(' vs ')[0]);
             const dateB = parseDate(b.periodKey.split(' vs ')[0]);
-            if (dateA.getTime() !== dateB.getTime()) {
-                return dateA - dateB;
+            const timeA = dateA.getTime();
+            const timeB = dateB.getTime();
+            if (timeA !== timeB) {
+                return timeA - timeB;
             }
             return a.periodKey.localeCompare(b.periodKey); // Keep for same-day games
         }
@@ -694,7 +698,9 @@ export default function App() {
 
     const sortedKeys = Object.keys(grouped).sort((a, b) => {
         if (trendPeriod === 'game') {
-            return parseDate(a) - parseDate(b);
+            const dateA = parseDate(a);
+            const dateB = parseDate(b);
+            return dateA.getTime() - dateB.getTime();
         }
         if (trendPeriod === 'monthly') {
             return new Date(a) - new Date(b);
@@ -788,7 +794,9 @@ export default function App() {
 
     const sortedKeys = Object.keys(grouped).sort((a, b) => {
         if (trendPeriod === 'game') {
-            return parseDate(a) - parseDate(b);
+            const dateA = parseDate(a);
+            const dateB = parseDate(b);
+            return dateA.getTime() - dateB.getTime();
         }
         if (trendPeriod === 'monthly') {
             return new Date(a) - new Date(b);
