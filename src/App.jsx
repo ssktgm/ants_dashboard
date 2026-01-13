@@ -45,25 +45,13 @@ const safeDiv = (a, b) => b === 0 ? 0 : a / b;
 
 const parseDate = (dateStr) => {
     if (!dateStr) return new Date(0);
-    const parts = dateStr.split(/[-/]/);
-    if (parts.length === 3) {
-        const year = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10);
-        const day = parseInt(parts[2], 10);
-        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-            // Create date and check if it's valid. Month is 0-indexed.
-            const d = new Date(year, month - 1, day);
-            if (!isNaN(d.getTime())) {
-                return d;
-            }
-        }
+    const d = new Date(dateStr);
+    // Check if the date is valid
+    if (!isNaN(d.getTime())) {
+        // To treat the date as local timezone midnight, not UTC
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
     }
-    // Fallback for other formats or if parsing failed
-    const fallback = new Date(dateStr);
-    if (!isNaN(fallback.getTime())) {
-        return fallback;
-    }
-    // If all else fails, return a safe, known date instead of 'Invalid Date'
+    // If parsing fails, return a safe, known date
     return new Date(0);
 };
 
@@ -92,6 +80,88 @@ const StatCard = ({ title, value, subValue, icon: Icon, color = "blue" }) => (
   </Card>
 );
 
+const FilterPanel = ({ activeFilters, categories, defaultFilters, clearedFilters, onApplyFilters }) => {
+  const [draftFilters, setDraftFilters] = useState(activeFilters);
+
+  useEffect(() => {
+    setDraftFilters(activeFilters);
+  }, [activeFilters]);
+
+  return (
+    <Card className="mb-6 border border-blue-100 bg-blue-50">
+        <div className="flex flex-col md:flex-row md:items-end gap-4">
+            <div className="flex-1">
+                <label className="block text-xs font-semibold text-gray-500 mb-1">期間指定</label>
+                <div className="flex items-center gap-2">
+                    <input 
+                        type="date" 
+                        value={draftFilters.startDate}
+                        onChange={e => setDraftFilters({...draftFilters, startDate: e.target.value})}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                    />
+                    <span className="text-gray-400">～</span>
+                    <input 
+                        type="date" 
+                        value={draftFilters.endDate}
+                        onChange={e => setDraftFilters({...draftFilters, endDate: e.target.value})}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                    />
+                </div>
+            </div>
+            <div className="flex-1">
+                <label className="block text-xs font-semibold text-gray-500 mb-1">チーム名（部分一致）</label>
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search size={14} className="text-gray-400" />
+                    </div>
+                    <input 
+                        type="text" 
+                        placeholder="A軍, B軍 (正規表現可)" 
+                        value={draftFilters.teamKeyword}
+                        onChange={e => setDraftFilters({...draftFilters, teamKeyword: e.target.value})}
+                        className="block w-full pl-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                    />
+                </div>
+            </div>
+            <div className="flex-1">
+                <label className="block text-xs font-semibold text-gray-500 mb-1">大会・カテゴリ</label>
+                <select 
+                    value={draftFilters.category}
+                    onChange={e => setDraftFilters({...draftFilters, category: e.target.value})}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-white"
+                >
+                    <option value="all">全て</option>
+                    {categories.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                    ))}
+                </select>
+            </div>
+            <div className="flex items-end gap-2">
+                <button 
+                    onClick={() => onApplyFilters(draftFilters)}
+                    className="flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none"
+                >
+                    適用
+                </button>
+                <button 
+                    onClick={() => setDraftFilters(clearedFilters)}
+                    className="flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+                >
+                    クリア
+                </button>
+                <button 
+                    onClick={() => setDraftFilters(defaultFilters)}
+                    className="flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+                >
+                    <RefreshCw size={14} className="mr-2" />
+                    リセット
+                </button>
+            </div>
+        </div>
+    </Card>
+  );
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -119,9 +189,6 @@ export default function App() {
 
   // Filter State
   const [activeFilters, setActiveFilters] = useState(defaultFilters);
-  const [draftFilters, setDraftFilters] = useState(defaultFilters);
-
-  useEffect(() => { setDraftFilters(activeFilters) }, [activeFilters]);
 
   // Trends/Analysis State
   const [trendTarget, setTrendTarget] = useState('team'); 
@@ -503,7 +570,8 @@ export default function App() {
                 const awayTeam = row['先攻'] || '';
                 const isHomeArinko = homeTeam.includes('ありんこ') || homeTeam.includes('アントス');
                 const opponent = isHomeArinko ? awayTeam : homeTeam;
-                return `${row['日付']} vs ${opponent || '不明'}`;
+                const formattedDate = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+                return `${formattedDate} vs ${opponent || '不明'}`;
             case 'quarterly':
                 const quarter = Math.floor(month / 3) + 1;
                 return `${year}-Q${quarter}`;
@@ -556,8 +624,20 @@ export default function App() {
        const pa = m.ab + m.bb + m.hbp + m.sf;
        const bbRate = safeDiv(m.bb + m.hbp, pa) * 100;
        const soRate = safeDiv(m.so, pa) * 100;
+       
+       let displayKey = m.periodKey;
+       if (trendPeriod === 'game') {
+           const dateStr = m.periodKey.split(' vs ')[0];
+           const opponent = m.periodKey.split(' vs ')[1] || '不明';
+           const d = parseDate(dateStr);
+           const month = (d.getMonth() + 1).toString().padStart(2, '0');
+           const day = d.getDate().toString().padStart(2, '0');
+           displayKey = `${month}/${day} vs ${opponent}`;
+       }
+
        return {
           ...m,
+          displayKey,
           avg: Number(avg.toFixed(3)),
           ops: Number((obp + slg).toFixed(3)),
           bbRate: Number(bbRate.toFixed(1)),
@@ -605,7 +685,27 @@ export default function App() {
         const kPer7 = safeDiv(m.so * 7, innings);
         const bbPer7 = safeDiv((m.bb + m.hbp) * 7, innings);
         const strikeRate = safeDiv(m.s, m.pitches) * 100;
-        return { ...m, bbhbp: m.bb + m.hbp, era: Number(era.toFixed(2)), whip: Number(whip.toFixed(2)), kPer7: Number(kPer7.toFixed(2)), bbPer7: Number(bbPer7.toFixed(2)), strikeRate: Number(strikeRate.toFixed(1)) };
+        
+        let displayKey = m.periodKey;
+        if (trendPeriod === 'game') {
+           const dateStr = m.periodKey.split(' vs ')[0];
+           const opponent = m.periodKey.split(' vs ')[1] || '不明';
+           const d = parseDate(dateStr);
+           const month = (d.getMonth() + 1).toString().padStart(2, '0');
+           const day = d.getDate().toString().padStart(2, '0');
+           displayKey = `${month}/${day} vs ${opponent}`;
+        }
+
+        return { 
+            ...m,
+            displayKey,
+            bbhbp: m.bb + m.hbp, 
+            era: Number(era.toFixed(2)), 
+            whip: Number(whip.toFixed(2)), 
+            kPer7: Number(kPer7.toFixed(2)), 
+            bbPer7: Number(bbPer7.toFixed(2)), 
+            strikeRate: Number(strikeRate.toFixed(1)) 
+        };
     });
 
     return { batting: battingResult, pitching: pitchingResult };
@@ -698,9 +798,7 @@ export default function App() {
 
     const sortedKeys = Object.keys(grouped).sort((a, b) => {
         if (trendPeriod === 'game') {
-            const dateA = parseDate(a);
-            const dateB = parseDate(b);
-            return dateA.getTime() - dateB.getTime();
+            return new Date(a) - new Date(b);
         }
         if (trendPeriod === 'monthly') {
             return new Date(a) - new Date(b);
@@ -794,9 +892,7 @@ export default function App() {
 
     const sortedKeys = Object.keys(grouped).sort((a, b) => {
         if (trendPeriod === 'game') {
-            const dateA = parseDate(a);
-            const dateB = parseDate(b);
-            return dateA.getTime() - dateB.getTime();
+            return new Date(a) - new Date(b);
         }
         if (trendPeriod === 'monthly') {
             return new Date(a) - new Date(b);
@@ -925,80 +1021,6 @@ export default function App() {
 
   // --- Render Sub-Components ---
 
-  const FilterPanel = () => (
-    <Card className="mb-6 border border-blue-100 bg-blue-50">
-        <div className="flex flex-col md:flex-row md:items-end gap-4">
-            <div className="flex-1">
-                <label className="block text-xs font-semibold text-gray-500 mb-1">期間指定</label>
-                <div className="flex items-center gap-2">
-                    <input 
-                        type="date" 
-                        value={draftFilters.startDate}
-                        onChange={e => setDraftFilters({...draftFilters, startDate: e.target.value})}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                    />
-                    <span className="text-gray-400">～</span>
-                    <input 
-                        type="date" 
-                        value={draftFilters.endDate}
-                        onChange={e => setDraftFilters({...draftFilters, endDate: e.target.value})}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                    />
-                </div>
-            </div>
-            <div className="flex-1">
-                <label className="block text-xs font-semibold text-gray-500 mb-1">チーム名（部分一致）</label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search size={14} className="text-gray-400" />
-                    </div>
-                    <input 
-                        type="text" 
-                        placeholder="A軍, B軍 (正規表現可)" 
-                        value={draftFilters.teamKeyword}
-                        onChange={e => setDraftFilters({...draftFilters, teamKeyword: e.target.value})}
-                        className="block w-full pl-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-                    />
-                </div>
-            </div>
-            <div className="flex-1">
-                <label className="block text-xs font-semibold text-gray-500 mb-1">大会・カテゴリ</label>
-                <select 
-                    value={draftFilters.category}
-                    onChange={e => setDraftFilters({...draftFilters, category: e.target.value})}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-white"
-                >
-                    <option value="all">全て</option>
-                    {categories.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                    ))}
-                </select>
-            </div>
-            <div className="flex items-end gap-2">
-                <button 
-                    onClick={() => setActiveFilters(draftFilters)}
-                    className="flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none"
-                >
-                    適用
-                </button>
-                <button 
-                    onClick={() => setDraftFilters(clearedFilters)}
-                    className="flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
-                >
-                    クリア
-                </button>
-                <button 
-                    onClick={() => setDraftFilters(defaultFilters)}
-                    className="flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
-                >
-                    <RefreshCw size={14} className="mr-2" />
-                    リセット
-                </button>
-            </div>
-        </div>
-    </Card>
-  );
-
   const ImportSection = () => (
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
       <div className="text-center">
@@ -1040,7 +1062,13 @@ export default function App() {
 
   const DashboardView = () => (
     <div className="space-y-6">
-      <FilterPanel />
+      <FilterPanel 
+        activeFilters={activeFilters}
+        categories={categories}
+        defaultFilters={defaultFilters}
+        clearedFilters={clearedFilters}
+        onApplyFilters={setActiveFilters}
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="集計試合数" value={teamStats?.totalGames || 0} icon={Activity} color="indigo" />
         <StatCard title="チーム打率" value={teamStats?.teamAvg || ".000"} subValue={`${aggregatedBatting.reduce((a,c)=>a+c.h,0)}安打`} icon={TrendingUp} color="green" />
@@ -1289,7 +1317,13 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
       const isPitchingMetric = (metric) => pitchingMetricOptions.some(m => m.v === metric);
       return (
           <div className="space-y-6">
-              <FilterPanel />
+              <FilterPanel 
+                activeFilters={activeFilters}
+                categories={categories}
+                defaultFilters={defaultFilters}
+                clearedFilters={clearedFilters}
+                onApplyFilters={setActiveFilters}
+              />
               
               <div className="bg-white p-4 rounded-lg shadow space-y-4">
                   <div className="flex flex-wrap gap-4 items-center justify-between">
@@ -1664,7 +1698,13 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
 
       return (
           <div className="space-y-6">
-              <FilterPanel />
+              <FilterPanel 
+                activeFilters={activeFilters}
+                categories={categories}
+                defaultFilters={defaultFilters}
+                clearedFilters={clearedFilters}
+                onApplyFilters={setActiveFilters}
+              />
               <div className="bg-white p-4 rounded-lg shadow">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                       <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
@@ -1830,7 +1870,13 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
 
     return (
       <div className="space-y-4">
-        <FilterPanel />
+        <FilterPanel 
+          activeFilters={activeFilters}
+          categories={categories}
+          defaultFilters={defaultFilters}
+          clearedFilters={clearedFilters}
+          onApplyFilters={setActiveFilters}
+        />
         <Card className="overflow-hidden">
             <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -1904,7 +1950,13 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
 
     return (
        <div className="space-y-4">
-        <FilterPanel />
+        <FilterPanel 
+          activeFilters={activeFilters}
+          categories={categories}
+          defaultFilters={defaultFilters}
+          clearedFilters={clearedFilters}
+          onApplyFilters={setActiveFilters}
+        />
         <Card className="overflow-hidden">
             <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
