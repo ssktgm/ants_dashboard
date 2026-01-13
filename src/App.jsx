@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line, ComposedChart, ScatterChart, Scatter, ZAxis, ReferenceLine, LabelList, AreaChart, Area
 } from 'recharts';
-import { Upload, Database, TrendingUp, Activity, Save, Trash2, Filter, AlertCircle, Award, Search, Calendar, RefreshCw, LineChart as LineChartIcon, BarChart2, Menu, X, BookOpen, HelpCircle } from 'lucide-react';
+import { Upload, Database, TrendingUp, Activity, Save, Trash2, Filter, AlertCircle, Award, Search, Calendar, RefreshCw, LineChart as LineChartIcon, BarChart2, Menu, X, BookOpen, HelpCircle, Users } from 'lucide-react';
 
 // --- Default Data (Import from files) ---
 import DEFAULT_BATTING_CSV_URL from './data/scorer_stats_raw_b.csv?url';
@@ -61,6 +61,15 @@ const formatRate = (rate, leadingZero = false) => {
     return leadingZero ? formatted : formatted.replace(/^0/, '');
 };
 
+// 比較グラフ用の色パレット
+const COLORS = [
+  "#3b82f6", // Blue
+  "#ef4444", // Red
+  "#10b981", // Green
+  "#f59e0b", // Amber
+  "#8b5cf6"  // Violet
+];
+
 // --- Components ---
 
 const Card = ({ children, className = "" }) => (
@@ -80,12 +89,20 @@ const StatCard = ({ title, value, subValue, icon: Icon, color = "blue" }) => (
   </Card>
 );
 
-const FilterPanel = ({ activeFilters, categories, defaultFilters, clearedFilters, onApplyFilters }) => {
+// フィルタパネル：メモ化して入力中の再レンダリングを防止
+const FilterPanel = React.memo(({ activeFilters, categories, defaultFilters, clearedFilters, onApplyFilters }) => {
+  // 内部状態としてドラフトフィルタを保持
   const [draftFilters, setDraftFilters] = useState(activeFilters);
 
+  // 親から渡されたactiveFiltersが変更された場合のみ同期（初期ロードやリセット時など）
   useEffect(() => {
     setDraftFilters(activeFilters);
   }, [activeFilters]);
+
+  // 適用ボタン押下時のハンドラ
+  const handleApply = () => {
+    onApplyFilters(draftFilters);
+  };
 
   return (
     <Card className="mb-6 border border-blue-100 bg-blue-50">
@@ -96,14 +113,14 @@ const FilterPanel = ({ activeFilters, categories, defaultFilters, clearedFilters
                     <input 
                         type="date" 
                         value={draftFilters.startDate}
-                        onChange={e => setDraftFilters({...draftFilters, startDate: e.target.value})}
+                        onChange={e => setDraftFilters(prev => ({...prev, startDate: e.target.value}))}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                     />
                     <span className="text-gray-400">～</span>
                     <input 
                         type="date" 
                         value={draftFilters.endDate}
-                        onChange={e => setDraftFilters({...draftFilters, endDate: e.target.value})}
+                        onChange={e => setDraftFilters(prev => ({...prev, endDate: e.target.value}))}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                     />
                 </div>
@@ -118,7 +135,7 @@ const FilterPanel = ({ activeFilters, categories, defaultFilters, clearedFilters
                         type="text" 
                         placeholder="A軍, B軍 (正規表現可)" 
                         value={draftFilters.teamKeyword}
-                        onChange={e => setDraftFilters({...draftFilters, teamKeyword: e.target.value})}
+                        onChange={e => setDraftFilters(prev => ({...prev, teamKeyword: e.target.value}))}
                         className="block w-full pl-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
                     />
                 </div>
@@ -127,7 +144,7 @@ const FilterPanel = ({ activeFilters, categories, defaultFilters, clearedFilters
                 <label className="block text-xs font-semibold text-gray-500 mb-1">大会・カテゴリ</label>
                 <select 
                     value={draftFilters.category}
-                    onChange={e => setDraftFilters({...draftFilters, category: e.target.value})}
+                    onChange={e => setDraftFilters(prev => ({...prev, category: e.target.value}))}
                     className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-white"
                 >
                     <option value="all">全て</option>
@@ -138,7 +155,7 @@ const FilterPanel = ({ activeFilters, categories, defaultFilters, clearedFilters
             </div>
             <div className="flex items-end gap-2">
                 <button 
-                    onClick={() => onApplyFilters(draftFilters)}
+                    onClick={handleApply}
                     className="flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none"
                 >
                     適用
@@ -160,7 +177,7 @@ const FilterPanel = ({ activeFilters, categories, defaultFilters, clearedFilters
         </div>
     </Card>
   );
-};
+});
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -198,13 +215,17 @@ export default function App() {
 
   // Comparison State
   const [comparisonMetric, setComparisonMetric] = useState('avg');
-  const [comparisonMinPA, setComparisonMinPA] = useState(0); // Minimum PA/Innings
-  const [comparisonChartType, setComparisonChartType] = useState('ranking'); // 'ranking' or 'scatter'
+  const [comparisonMinPA, setComparisonMinPA] = useState(0); 
+  const [comparisonChartType, setComparisonChartType] = useState('ranking'); // 'ranking', 'scatter', 'all', 'chart-all', 'player-comparison'
   const [scatterX, setScatterX] = useState('obp');
   const [scatterY, setScatterY] = useState('slg');
   const [showScatterLabels, setShowScatterLabels] = useState(false);
   const [comparisonDataType, setComparisonDataType] = useState('batting');
   const [showAllInRankings, setShowAllInRankings] = useState(false);
+
+  // New State for Player Comparison
+  const [comparisonSelectedPlayers, setComparisonSelectedPlayers] = useState([]); // Array of player IDs
+  const [comparisonTrendPeriod, setComparisonTrendPeriod] = useState('monthly');
 
   // Categories & Players List
   const { categories, playerList } = useMemo(() => {
@@ -529,6 +550,7 @@ export default function App() {
     });
     
     return Object.values(periods).sort((a, b) => new Date(a.month) - new Date(b.month)).map(m => {
+       const avg = safeDiv(m.h, m.ab);
        const obp = safeDiv(m.h + m.bb + m.hbp, m.ab + m.bb + m.hbp + m.sf);
        const slg = safeDiv((m.h - m.doubles - m.triples - m.hr) + m.doubles*2 + m.triples*3 + m.hr*4, m.ab);
        return { ...m, avg: Number(avg.toFixed(3)), ops: Number((obp + slg).toFixed(3)) };
@@ -940,185 +962,194 @@ export default function App() {
         }
         return a.localeCompare(b);
     });
-  //   const playerBattingTrendData = useMemo(() => {
-//     if (!selectedPlayerId || trendTarget !== 'player' || trendType !== 'batting') return [];
 
-//     const getKey = (row, period) => {
-//         const d = parseDate(row['日付']);
-//         if (isNaN(d.getTime())) return null;
-//         const year = d.getFullYear();
-//         const month = d.getMonth();
-
-//         switch (period) {
-//             case 'game':
-//                 return row['日付'];
-//             case 'quarterly':
-//                 const quarter = Math.floor(month / 3) + 1;
-//                 return `${year}-Q${quarter}`;
-//             case 'monthly':
-//             default:
-//                 return `${year}-${(month + 1).toString().padStart(2, '0')}`;
-//         }
-//     };
-
-//     const sortedKeys = Object.keys(grouped).sort((a, b) => {
-//         if (trendPeriod === 'game') {
-//             return new Date(a) - new Date(b);
-//         }
-//         if (trendPeriod === 'monthly') {
-//             return new Date(a) - new Date(b);
-//         }
-//         return a.localeCompare(b);
-//     });
-
-//     let cumulative = { ab: 0, h: 0, bb: 0, hbp: 0, sf: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, sb: 0, so: 0 };
+    let cumulative = { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0 };
     
-//     return sortedKeys.map(key => {
-//         const periodRows = grouped[key];
-//         const periodStats = periodRows.reduce((acc, row) => {
-//             acc.ab += (row['打数'] || 0);
-//             acc.h += (row['安打'] || 0);
-//             acc.bb += (row['四球'] || 0);
-//             acc.hbp += (row['死球'] || 0);
-//             acc.sf += (row['犠飛'] || 0);
-//             acc.doubles += (row['二塁打'] || 0);
-//             acc.triples += (row['三塁打'] || 0);
-//             acc.hr += (row['本塁打'] || 0);
-//             acc.so += (row['三振'] || 0);
-//             acc.rbi += (row['打点'] || 0);
-//             return acc;
-//         }, { ab: 0, h: 0, bb: 0, hbp: 0, sf: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, so: 0 });
+    return sortedKeys.map(key => {
+        const periodRows = grouped[key];
+        const periodStats = periodRows.reduce((acc, row) => {
+            acc.outs += (row['アウト数'] || 0);
+            acc.er += (row['自責点'] || 0);
+            acc.bb += (row['四球'] || 0);
+            acc.hbp += (row['死球'] || 0);
+            acc.h += (row['安打'] || 0);
+            acc.so += (row['三振'] || 0);
+            acc.pitches += (row['球数'] || 0);
+            acc.strikes += (row['S数'] || 0);
+            return acc;
+        }, { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0, pitches: 0, strikes: 0 });
 
-//         Object.keys(periodStats).forEach(statKey => {
-//             cumulative[statKey] += periodStats[statKey];
-//         });
+        Object.keys(cumulative).forEach(statKey => {
+            cumulative[statKey] += periodStats[statKey];
+        });
 
-//         const avg = safeDiv(cumulative.h, cumulative.ab);
-//         const obp = safeDiv(cumulative.h + cumulative.bb + cumulative.hbp, cumulative.ab + cumulative.bb + cumulative.hbp + cumulative.sf);
-//         const singles = cumulative.h - cumulative.doubles - cumulative.triples - cumulative.hr;
-//         const tb = singles + cumulative.doubles*2 + cumulative.triples*3 + cumulative.hr*4;
-//         const pa = cumulative.ab + cumulative.bb + cumulative.hbp + cumulative.sf;
-//         const soRate = safeDiv(cumulative.so, pa) * 100;
-//         const bbRate = safeDiv(cumulative.bb + cumulative.hbp, pa) * 100;
-//         const slg = safeDiv(tb, cumulative.ab);
+        const era = safeDiv(cumulative.er * 7, cumulative.outs / 3);
+        const whip = safeDiv(cumulative.bb + cumulative.hbp + cumulative.h, cumulative.outs / 3);
+        const kbb = safeDiv(cumulative.so, cumulative.bb);
+        const kPer7 = safeDiv(cumulative.so * 7, cumulative.outs / 3);
+        const bbPer7 = safeDiv((cumulative.bb + cumulative.hbp) * 7, cumulative.outs / 3);
 
-//         let opponent = '';
-//         if (trendPeriod === 'game' && periodRows.length > 0) {
-//             const row = periodRows[0];
-//             const homeTeam = row['後攻'] || '';
-//             const awayTeam = row['先攻'] || '';
-//             const isHomeArinko = homeTeam.includes('ありんこ') || homeTeam.includes('アントス');
-//             opponent = isHomeArinko ? awayTeam : homeTeam;
-//         }
-
-//         return {
-//             periodKey: key,
-//             opponent: opponent,
-//             avg: Number(avg.toFixed(3)),
-//             ops: Number((obp + slg).toFixed(3)),
-//             slg: Number(slg.toFixed(3)),
-//             obp: Number(obp.toFixed(3)),
-//             bbRate: Number(bbRate.toFixed(1)),
-//             soRate: Number(soRate.toFixed(1)),
-//             ...periodStats
-//         };
-//     });
-//   }, [filteredBattingData, selectedPlayerId, trendTarget, trendType, trendPeriod]);
-
-//   const playerPitchingTrendData = useMemo(() => {
-//     if (!selectedPlayerId || trendTarget !== 'player' || trendType !== 'pitching') return [];
-//     const getKey = (row, period) => {
-//         const d = parseDate(row['日付']);
-//         if (isNaN(d.getTime())) return null;
-//         const year = d.getFullYear();
-//         const month = d.getMonth();
-
-//         switch (period) {
-//             case 'game':
-//                 return row['日付'];
-//             case 'quarterly':
-//                 const quarter = Math.floor(month / 3) + 1;
-//                 return `${year}-Q${quarter}`;
-//             case 'monthly':
-//             default:
-//                 return `${year}-${(month + 1).toString().padStart(2, '0')}`;
-//         }
-//     };
-
-//     const rows = filteredPitchingData.filter(r => (r['選手ID'] || r['名前']) === selectedPlayerId);
-    
-//     const grouped = {};
-//     rows.forEach(row => {
-//         const key = getKey(row, trendPeriod);
-//         if (!key) return;
-//         if (!grouped[key]) grouped[key] = [];
-//         grouped[key].push(row);
-//     });
-
-//     const sortedKeys = Object.keys(grouped).sort((a, b) => {
-//         if (trendPeriod === 'game') {
-//             return new Date(a) - new Date(b);
-//         }
-//         if (trendPeriod === 'monthly') {
-//             return new Date(a) - new Date(b);
-//         }
-//         return a.localeCompare(b);
-//     });
-
-//     let cumulative = { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0 };
-    
-//     return sortedKeys.map(key => {
-//         const periodRows = grouped[key];
-//         const periodStats = periodRows.reduce((acc, row) => {
-//             acc.outs += (row['アウト数'] || 0);
-//             acc.er += (row['自責点'] || 0);
-//             acc.bb += (row['四球'] || 0);
-//             acc.hbp += (row['死球'] || 0);
-//             acc.h += (row['安打'] || 0);
-//             acc.so += (row['三振'] || 0);
-//             acc.pitches += (row['球数'] || 0);
-//             acc.strikes += (row['S数'] || 0);
-//             return acc;
-//         }, { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0, pitches: 0, strikes: 0 });
-
-//         Object.keys(cumulative).forEach(statKey => {
-//             cumulative[statKey] += periodStats[statKey];
-//         });
-
-//         const era = safeDiv(cumulative.er * 7, cumulative.outs / 3);
-//         const whip = safeDiv(cumulative.bb + cumulative.hbp + cumulative.h, cumulative.outs / 3);
-//         const kbb = safeDiv(cumulative.so, cumulative.bb);
-//         const kPer7 = safeDiv(cumulative.so * 7, cumulative.outs / 3);
-//         const bbPer7 = safeDiv((cumulative.bb + cumulative.hbp) * 7, cumulative.outs / 3);
-
-//         const innings = periodStats.outs / 3;
-//         const strikeRate = safeDiv(periodStats.strikes, periodStats.pitches) * 100;
+        const innings = periodStats.outs / 3;
+        const strikeRate = safeDiv(periodStats.strikes, periodStats.pitches) * 100;
         
-//         let opponent = '';
-//         if (trendPeriod === 'game' && periodRows.length > 0) {
-//             const row = periodRows[0];
-//             const homeTeam = row['後攻'] || '';
-//             const awayTeam = row['先攻'] || '';
-//             const isHomeArinko = homeTeam.includes('ありんこ') || homeTeam.includes('アントス');
-//             opponent = isHomeArinko ? awayTeam : homeTeam;
-//         }
+        let opponent = '';
+        if (trendPeriod === 'game' && periodRows.length > 0) {
+            const row = periodRows[0];
+            const homeTeam = row['後攻'] || '';
+            const awayTeam = row['先攻'] || '';
+            const isHomeArinko = homeTeam.includes('ありんこ') || homeTeam.includes('アントス');
+            opponent = isHomeArinko ? awayTeam : homeTeam;
+        }
 
-//         return {
-//             periodKey: key,
-//             opponent: opponent,
-//             era: Number(era.toFixed(2)),
-//             whip: Number(whip.toFixed(2)),
-//             kbb: Number(kbb.toFixed(2)),
-//             innings: Number(innings.toFixed(1)),
-//             kPer7: Number(kPer7.toFixed(2)),
-//             bbPer7: Number(bbPer7.toFixed(2)),
-//             strikeRate: Number(strikeRate.toFixed(1)),
-//             bb: periodStats.bb,
-//             hbp: periodStats.hbp,
-//             pitches: periodStats.pitches
-//         };
-//     });
+        return {
+            periodKey: key,
+            opponent: opponent,
+            era: Number(era.toFixed(2)),
+            whip: Number(whip.toFixed(2)),
+            kbb: Number(kbb.toFixed(2)),
+            innings: Number(innings.toFixed(1)),
+            kPer7: Number(kPer7.toFixed(2)),
+            bbPer7: Number(bbPer7.toFixed(2)),
+            strikeRate: Number(strikeRate.toFixed(1)),
+            bb: periodStats.bb,
+            hbp: periodStats.hbp,
+            pitches: periodStats.pitches
+        };
+    });
   }, [filteredPitchingData, selectedPlayerId, trendTarget, trendType, trendPeriod]);
+
+  // Comparison Multi-Player Trend Logic
+  const multiPlayerTrendData = useMemo(() => {
+    if (comparisonChartType !== 'player-comparison' || comparisonSelectedPlayers.length === 0) return [];
+
+    const getKey = (row, period) => {
+        const d = parseDate(row['日付']);
+        if (isNaN(d.getTime())) return null;
+        const year = d.getFullYear();
+        const month = d.getMonth();
+
+        switch (period) {
+            case 'game':
+                const formattedDate = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+                // game modeでは対戦相手もKeyに含めるが、複数人比較の場合は日付を軸にするのが自然。
+                // ただ、同日に複数試合ある場合を考慮し、既存ロジックに合わせて一意性を保つなら対戦相手も含める。
+                const homeTeam = row['後攻'] || '';
+                const awayTeam = row['先攻'] || '';
+                const isHomeArinko = homeTeam.includes('ありんこ') || homeTeam.includes('アントス');
+                const opponent = isHomeArinko ? awayTeam : homeTeam;
+                return `${formattedDate} vs ${opponent || '不明'}`;
+            case 'quarterly':
+                const quarter = Math.floor(month / 3) + 1;
+                return `${year}-Q${quarter}`;
+            case 'monthly':
+            default:
+                return `${year}-${(month + 1).toString().padStart(2, '0')}`;
+        }
+    };
+
+    // Calculate trend for each player
+    const playersData = comparisonSelectedPlayers.map(pid => {
+        const rows = comparisonDataType === 'batting'
+            ? filteredBattingData.filter(r => (r['選手ID'] || r['名前']) === pid)
+            : filteredPitchingData.filter(r => (r['選手ID'] || r['名前']) === pid);
+        
+        const grouped = {};
+        rows.forEach(row => {
+            const key = getKey(row, comparisonTrendPeriod);
+            if (!key) return;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(row);
+        });
+
+        const sortedKeys = Object.keys(grouped).sort((a, b) => {
+             if (comparisonTrendPeriod === 'game') {
+                const dateA = parseDate(a.split(' vs ')[0]);
+                const dateB = parseDate(b.split(' vs ')[0]);
+                const timeA = dateA.getTime();
+                const timeB = dateB.getTime();
+                if (timeA !== timeB) return timeA - timeB;
+                return a.localeCompare(b);
+            }
+            if (comparisonTrendPeriod === 'monthly') return new Date(a) - new Date(b);
+            return a.localeCompare(b);
+        });
+
+        // Cumulative Calculation
+        const cumulative = comparisonDataType === 'batting'
+            ? { ab: 0, h: 0, bb: 0, hbp: 0, sf: 0, doubles: 0, triples: 0, hr: 0, so: 0 }
+            : { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0 };
+        
+        return sortedKeys.map(key => {
+            const periodRows = grouped[key];
+            
+            // Period stats
+            if (comparisonDataType === 'batting') {
+                 periodRows.forEach(row => {
+                    cumulative.ab += (row['打数'] || 0);
+                    cumulative.h += (row['安打'] || 0);
+                    cumulative.bb += (row['四球'] || 0);
+                    cumulative.hbp += (row['死球'] || 0);
+                    cumulative.sf += (row['犠飛'] || 0);
+                    cumulative.doubles += (row['二塁打'] || 0);
+                    cumulative.triples += (row['三塁打'] || 0);
+                    cumulative.hr += (row['本塁打'] || 0);
+                    cumulative.so += (row['三振'] || 0);
+                 });
+                 const avg = safeDiv(cumulative.h, cumulative.ab);
+                 const obp = safeDiv(cumulative.h + cumulative.bb + cumulative.hbp, cumulative.ab + cumulative.bb + cumulative.hbp + cumulative.sf);
+                 const slg = safeDiv((cumulative.h - cumulative.doubles - cumulative.triples - cumulative.hr) + cumulative.doubles*2 + cumulative.triples*3 + cumulative.hr*4, cumulative.ab);
+                 const ops = obp + slg;
+                 const pa = cumulative.ab + cumulative.bb + cumulative.hbp + cumulative.sf;
+                 const bbRate = safeDiv(cumulative.bb + cumulative.hbp, pa) * 100;
+                 const soRate = safeDiv(cumulative.so, pa) * 100;
+
+                 return { periodKey: key, [`${pid}_avg`]: avg, [`${pid}_ops`]: ops, [`${pid}_slg`]: slg, [`${pid}_obp`]: obp, [`${pid}_bbRate`]: bbRate, [`${pid}_soRate`]: soRate };
+            } else {
+                 periodRows.forEach(row => {
+                    cumulative.outs += (row['アウト数'] || 0);
+                    cumulative.er += (row['自責点'] || 0);
+                    cumulative.bb += (row['四球'] || 0);
+                    cumulative.hbp += (row['死球'] || 0);
+                    cumulative.h += (row['安打'] || 0);
+                    cumulative.so += (row['三振'] || 0);
+                 });
+                 const era = safeDiv(cumulative.er * 7, cumulative.outs / 3);
+                 const whip = safeDiv(cumulative.bb + cumulative.hbp + cumulative.h, cumulative.outs / 3);
+                 const kbb = safeDiv(cumulative.so, cumulative.bb);
+                 const kPer7 = safeDiv(cumulative.so * 7, cumulative.outs / 3);
+                 const bbPer7 = safeDiv((cumulative.bb + cumulative.hbp) * 7, cumulative.outs / 3);
+                 
+                 return { periodKey: key, [`${pid}_era`]: era, [`${pid}_whip`]: whip, [`${pid}_kbb`]: kbb, [`${pid}_kPer7`]: kPer7, [`${pid}_bbPer7`]: bbPer7 };
+            }
+        });
+    });
+
+    // Merge logic
+    const allKeys = new Set();
+    playersData.forEach(pData => pData.forEach(item => allKeys.add(item.periodKey)));
+    
+    const merged = Array.from(allKeys).sort((a, b) => {
+         if (comparisonTrendPeriod === 'game') {
+            const dateA = parseDate(a.split(' vs ')[0]);
+            const dateB = parseDate(b.split(' vs ')[0]);
+            const timeA = dateA.getTime();
+            const timeB = dateB.getTime();
+            if (timeA !== timeB) return timeA - timeB;
+            return a.localeCompare(b);
+        }
+        if (comparisonTrendPeriod === 'monthly') return new Date(a) - new Date(b);
+        return a.localeCompare(b);
+    }).map(key => {
+        const obj = { periodKey: key };
+        playersData.forEach(pData => {
+            const found = pData.find(d => d.periodKey === key);
+            if (found) Object.assign(obj, found);
+        });
+        return obj;
+    });
+
+    return merged;
+  }, [comparisonChartType, comparisonSelectedPlayers, comparisonTrendPeriod, comparisonDataType, filteredBattingData, filteredPitchingData]);
 
   // --- Comparison & Ranking Logic ---
 
@@ -1153,7 +1184,6 @@ export default function App() {
       }
       
       // Sort logic
-      // Lower is better for ERA, WHIP
       if (['era', 'whip'].includes(comparisonMetric)) {
           data.sort((a, b) => (a.value ?? Infinity) - (b.value ?? Infinity));
       } else {
@@ -1173,7 +1203,6 @@ export default function App() {
                 z: p.inningsVal
             }));
       }
-      // Default to batting
       return aggregatedBatting
           .filter(p => p.pa >= comparisonMinPA)
           .map(p => ({
@@ -1425,7 +1454,6 @@ const AllRankingsView = ({ battingData, pitchingData, minPA, minInnings, showAll
         </div>
     );
 };
-
 const AllChartsView = ({ data, metricOptions, isPitching }) => {
     const ChartCard = ({ metric }) => {
         const sortedData = useMemo(() => {
@@ -1479,7 +1507,105 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
       const currentMetricOptions = comparisonDataType === 'batting' ? battingMetricOptions : pitchingMetricOptions;
       const scatterMetricOptions = comparisonDataType === 'batting' ? battingMetricOptions : pitchingMetricOptions;
 
-      const isPitchingMetric = (metric) => pitchingMetricOptions.some(m => m.v === metric);
+      // 選手選択トグル処理
+      const togglePlayerSelection = (pid) => {
+          if (comparisonSelectedPlayers.includes(pid)) {
+              setComparisonSelectedPlayers(comparisonSelectedPlayers.filter(id => id !== pid));
+          } else {
+              if (comparisonSelectedPlayers.length < 5) {
+                  setComparisonSelectedPlayers([...comparisonSelectedPlayers, pid]);
+              }
+          }
+      };
+
+      // 選手間比較チャートのレンダリング
+      const renderPlayerComparisonCharts = () => {
+          if (comparisonDataType === 'batting') {
+              const charts = [
+                  { key: 'avg', label: '打率 推移', domain: [0, 0.6], formatter: (v) => v.toFixed(3) },
+                  { key: 'ops', label: 'OPS 推移', domain: [0, 1.2], formatter: (v) => v.toFixed(3) },
+                  { key: 'obp', label: '出塁率 推移', domain: [0, 0.7], formatter: (v) => v.toFixed(3) },
+                  { key: 'slg', label: '長打率 推移', domain: [0, 0.8], formatter: (v) => v.toFixed(3) },
+                  { key: 'bbRate', label: '四死球率(%) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(1) },
+                  { key: 'soRate', label: '三振率(%) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(1) },
+              ];
+              return (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+                      {charts.map(chart => (
+                          <Card key={chart.key} className="h-96">
+                                <h4 className="font-bold text-md text-gray-800 mb-3">{chart.label}</h4>
+                                <ResponsiveContainer width="100%" height="85%">
+                                    <LineChart data={multiPlayerTrendData}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
+                                        <YAxis domain={chart.domain} tickFormatter={chart.formatter} />
+                                        <RechartsTooltip />
+                                        <Legend />
+                                        {comparisonSelectedPlayers.map((pid, idx) => {
+                                            const pName = playerList.find(p => p.id === pid)?.name || pid;
+                                            return (
+                                                <Line 
+                                                    key={pid} 
+                                                    type="monotone" 
+                                                    dataKey={`${pid}_${chart.key}`} 
+                                                    name={pName} 
+                                                    stroke={COLORS[idx % COLORS.length]} 
+                                                    strokeWidth={2} 
+                                                    connectNulls
+                                                    dot={{r: 3}} 
+                                                />
+                                            );
+                                        })}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                          </Card>
+                      ))}
+                  </div>
+              );
+          } else {
+              const charts = [
+                  { key: 'era', label: '防御率 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
+                  { key: 'whip', label: 'WHIP 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
+                  { key: 'kbb', label: 'K/BB 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
+                  { key: 'kPer7', label: '奪三振率(K/7) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
+                  { key: 'bbPer7', label: '与四死球率(BB/7) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
+              ];
+              return (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+                      {charts.map(chart => (
+                           <Card key={chart.key} className="h-96">
+                                <h4 className="font-bold text-md text-gray-800 mb-3">{chart.label}</h4>
+                                <ResponsiveContainer width="100%" height="85%">
+                                    <LineChart data={multiPlayerTrendData}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
+                                        <YAxis domain={chart.domain} tickFormatter={chart.formatter} />
+                                        <RechartsTooltip />
+                                        <Legend />
+                                        {comparisonSelectedPlayers.map((pid, idx) => {
+                                            const pName = playerList.find(p => p.id === pid)?.name || pid;
+                                            return (
+                                                <Line 
+                                                    key={pid} 
+                                                    type="monotone" 
+                                                    dataKey={`${pid}_${chart.key}`} 
+                                                    name={pName} 
+                                                    stroke={COLORS[idx % COLORS.length]} 
+                                                    strokeWidth={2} 
+                                                    connectNulls
+                                                    dot={{r: 3}} 
+                                                />
+                                            );
+                                        })}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                          </Card>
+                      ))}
+                  </div>
+              );
+          }
+      };
+
       return (
           <div className="space-y-6">
               <FilterPanel 
@@ -1505,51 +1631,39 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
+                        <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg overflow-x-auto">
                             <button 
                                 onClick={() => setComparisonChartType('ranking')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'ranking' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`whitespace-nowrap px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'ranking' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 ランキング
                             </button>
                             <button 
                                 onClick={() => setComparisonChartType('scatter')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'scatter' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`whitespace-nowrap px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'scatter' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 相関分析
                             </button>
                             <button 
                                 onClick={() => setComparisonChartType('all')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'all' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`whitespace-nowrap px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'all' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 主要指標ランキング
                             </button>
                             <button 
                                 onClick={() => setComparisonChartType('chart-all')}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'chart-all' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`whitespace-nowrap px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'chart-all' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 グラフ一括表示
                             </button>
+                            <button 
+                                onClick={() => setComparisonChartType('player-comparison')}
+                                className={`whitespace-nowrap px-4 py-2 rounded-md text-sm font-medium transition-all ${comparisonChartType === 'player-comparison' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <Users size={16} className="inline mr-1 mb-0.5"/>
+                                選手間比較
+                            </button>
                         </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 flex-wrap">
-                        <label className="text-sm text-gray-600">
-                           {comparisonDataType === 'pitching' ? '最低投球回' : '最低打席数'}: 
-                        </label>
-                        <input 
-                            type="number" 
-                            min="0"
-                            value={comparisonMinPA}
-                            onChange={(e) => setComparisonMinPA(Number(e.target.value))}
-                            className="w-16 p-1 border rounded text-center"
-                        />
-                        {comparisonChartType === 'all' && (
-                            <div className="flex items-center gap-2">
-                                <input type="checkbox" id="show-all-rankings" checked={showAllInRankings} onChange={e => setShowAllInRankings(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-                                <label htmlFor="show-all-rankings" className="text-sm text-gray-600">全員表示</label>
-                            </div>
-                        )}
                     </div>
                   </div>
 
@@ -1563,11 +1677,21 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                           >
                               {currentMetricOptions.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
                           </select>
+                          <label className="text-sm text-gray-600 ml-4">
+                           {comparisonDataType === 'pitching' ? '最低投球回' : '最低打席数'}: 
+                        </label>
+                        <input 
+                            type="number" 
+                            min="0"
+                            value={comparisonMinPA}
+                            onChange={(e) => setComparisonMinPA(Number(e.target.value))}
+                            className="w-16 p-1 border rounded text-center"
+                        />
                       </div>
                   )}
 
                   {comparisonChartType === 'scatter' && (
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 flex-wrap">
                           <div className="flex items-center gap-2">
                               <label className="text-sm font-bold text-gray-700">X軸:</label>
                               <select 
@@ -1590,11 +1714,55 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                                   名前を表示
                               </label>
                           </div>
+                          <div className="flex items-center gap-2 ml-2">
+                             <label className="text-sm text-gray-600">{comparisonDataType === 'pitching' ? '最低投球回' : '最低打席数'}:</label>
+                             <input type="number" min="0" value={comparisonMinPA} onChange={(e) => setComparisonMinPA(Number(e.target.value))} className="w-16 p-1 border rounded text-center" />
+                          </div>
+                      </div>
+                  )}
+
+                  {/* 選手間比較モード用の設定エリア */}
+                  {comparisonChartType === 'player-comparison' && (
+                      <div className="flex flex-col gap-4 border-t pt-4">
+                          <div className="flex items-center gap-4 flex-wrap">
+                              <div className="flex items-center gap-2">
+                                <label className="text-sm font-bold text-gray-700">集計単位:</label>
+                                <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                                    <button onClick={() => setComparisonTrendPeriod('game')} className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${comparisonTrendPeriod === 'game' ? 'bg-primary-500 text-white shadow' : 'text-gray-500 hover:bg-gray-200'}`}>試合別</button>
+                                    <button onClick={() => setComparisonTrendPeriod('monthly')} className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${comparisonTrendPeriod === 'monthly' ? 'bg-primary-500 text-white shadow' : 'text-gray-500 hover:bg-gray-200'}`}>月別</button>
+                                    <button onClick={() => setComparisonTrendPeriod('quarterly')} className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${comparisonTrendPeriod === 'quarterly' ? 'bg-primary-500 text-white shadow' : 'text-gray-500 hover:bg-gray-200'}`}>3ヶ月単位</button>
+                                </div>
+                              </div>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                              <div className="flex justify-between items-center">
+                                <label className="text-sm font-bold text-gray-700">比較選手を選択 (最大5名):</label>
+                                <span className={`text-xs ${comparisonSelectedPlayers.length === 5 ? 'text-red-500 font-bold' : 'text-gray-500'}`}>{comparisonSelectedPlayers.length} / 5 選択中</span>
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-40 overflow-y-auto border p-2 rounded bg-gray-50">
+                                  {playerList.map(p => {
+                                      const isSelected = comparisonSelectedPlayers.includes(p.id);
+                                      const isDisabled = !isSelected && comparisonSelectedPlayers.length >= 5;
+                                      return (
+                                          <label key={p.id} className={`flex items-center space-x-2 text-xs p-1 rounded cursor-pointer transition-colors ${isSelected ? 'bg-blue-100 font-bold text-primary-700' : isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white text-gray-600'}`}>
+                                              <input 
+                                                type="checkbox" 
+                                                checked={isSelected} 
+                                                onChange={() => togglePlayerSelection(p.id)}
+                                                disabled={isDisabled}
+                                                className="rounded text-primary-600 focus:ring-primary-500"
+                                              />
+                                              <span className="truncate">{p.number} {p.name}</span>
+                                          </label>
+                                      );
+                                  })}
+                              </div>
+                          </div>
                       </div>
                   )}
               </div>
 
-              <Card className={['all', 'chart-all'].includes(comparisonChartType) ? '' : 'h-[500px]'}>
+              <Card className={['all', 'chart-all', 'player-comparison'].includes(comparisonChartType) ? '' : 'h-[500px]'}>
                   <h3 className="text-lg font-bold text-gray-700 mb-4">
                       {comparisonChartType === 'ranking' ? 
                           `チーム内ランキング: ${currentMetricOptions.find(m => m.v === comparisonMetric)?.l}` : 
@@ -1602,6 +1770,8 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                           `相関分析: ${scatterMetricOptions.find(m => m.v === scatterX)?.l} vs ${scatterMetricOptions.find(m => m.v === scatterY)?.l}` :
                           comparisonChartType === 'chart-all' ?
                           '全指標グラフ表示' :
+                          comparisonChartType === 'player-comparison' ?
+                          '選手間 推移比較' :
                           '主要指標ランキング'
                       }
                   </h3>
@@ -1630,7 +1800,7 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                                 <ZAxis type="number" dataKey="z" range={[20, 400]} name={comparisonDataType === 'batting' ? 'OPS' : '投球回'} />
                                 <XAxis type="number" dataKey="x" name={scatterMetricOptions.find(m => m.v === scatterX)?.l} unit="" domain={['auto', 'auto']} tickFormatter={(v)=> Number(v).toFixed(3)} label={{ value: scatterMetricOptions.find(m => m.v === scatterX)?.l, position: 'insideBottom', offset: -10 }} />
                                 <YAxis type="number" dataKey="y" name={scatterMetricOptions.find(m => m.v === scatterY)?.l} unit="" domain={['auto', 'auto']} tickFormatter={(v)=> Number(v).toFixed(3)} label={{ value: scatterMetricOptions.find(m => m.v === scatterY)?.l, angle: -90, position: 'insideLeft' }} />
-                                <RechartsTooltip cursor={{ strokeDasharray: '3 3' }} content={({ active, payload, ...rest }) => {
+                                <RechartsTooltip cursor={{ strokeDasharray: '3 3' }} content={({ active, payload }) => {
                                     if (active && payload && payload.length) {
                                         const data = payload[0].payload;
                                         return (
@@ -1670,6 +1840,7 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                         isPitching={comparisonDataType === 'pitching'}
                     />
                   )}
+                  {comparisonChartType === 'player-comparison' && renderPlayerComparisonCharts()}
               </Card>
           </div>
       );
@@ -2206,6 +2377,7 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
               <div>
                 <h4 className="font-semibold">分析・比較画面</h4>
                 <p className="text-sm mt-1">選手間のパフォーマンスをより深く比較・分析します。「ランキング」で特定の指標の順位を見たり、「相関分析」で2つの指標の関係性を散布図で確認したり、「一括表示」で主要指標のランキングをまとめて見ることができます。</p>
+                <p className="text-sm mt-1"><strong>New! 選手間比較:</strong> 任意の選手を最大5名まで選択し、試合別・月別・3ヶ月別の成績推移を同一グラフ上で比較できます。</p>
               </div>
             </div>
           </section>
@@ -2355,7 +2527,7 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
       
       <footer className="bg-slate-200 mt-12 py-6 text-center text-sm text-gray-500">
         <p>Data stored locally in your browser. Clearing cache will remove stats.</p>
-        <p className="mt-1">ありんこアントス Dashboard v1.5</p>
+        <p className="mt-1">ありんこアントス Dashboard v1.6</p>
       </footer>
     </div>
   );
