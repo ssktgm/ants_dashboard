@@ -677,7 +677,12 @@ export default function App() {
         grouped[key].push(row);
     });
 
-    const sortedKeys = Object.keys(grouped).sort();
+    const sortedKeys = Object.keys(grouped).sort((a, b) => {
+        if (trendPeriod === 'game') {
+            return parseDate(a) - parseDate(b);
+        }
+        return a.localeCompare(b);
+    });
 
     let cumulative = { ab: 0, h: 0, bb: 0, hbp: 0, sf: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, sb: 0, so: 0 };
     
@@ -763,7 +768,12 @@ export default function App() {
         grouped[key].push(row);
     });
 
-    const sortedKeys = Object.keys(grouped).sort();
+    const sortedKeys = Object.keys(grouped).sort((a, b) => {
+        if (trendPeriod === 'game') {
+            return parseDate(a) - parseDate(b);
+        }
+        return a.localeCompare(b);
+    });
 
     let cumulative = { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0 };
     
@@ -1533,7 +1543,7 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                               <ResponsiveContainer width="100%" height="90%">
                                   <LineChart data={playerPitchingTrendData}>
                                       <CartesianGrid strokeDasharray="3 3" />
-                                      <XAxis dataKey="date" tick={{fontSize: 10}} />
+                                      <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
                                       <YAxis yAxisId="left" domain={[0, 'auto']} label={{ value: 'ERA', angle: -90, position: 'insideLeft' }} />
                                       <YAxis yAxisId="right" orientation="right" domain={[0, 'auto']} label={{ value: 'WHIP', angle: 90, position: 'insideRight' }} />
                                       <RechartsTooltip />
@@ -1551,7 +1561,7 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                               <ResponsiveContainer width="100%" height="90%">
                                   <ComposedChart data={playerPitchingTrendData}>
                                       <CartesianGrid strokeDasharray="3 3" />
-                                      <XAxis dataKey="date" tick={{fontSize: 10}} />
+                                      <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
                                       <YAxis yAxisId="left" label={{ value: '回', angle: -90, position: 'insideLeft' }} />
                                       <YAxis yAxisId="right" orientation="right" unit="%" domain={[0, 100]} />
                                       <RechartsTooltip content={({ active, payload, label }) => {
@@ -1585,7 +1595,7 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                               <ResponsiveContainer width="100%" height="90%">
                                   <LineChart data={playerPitchingTrendData}>
                                       <CartesianGrid strokeDasharray="3 3" />
-                                      <XAxis dataKey="date" tick={{fontSize: 10}} />
+                                      <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
                                       <YAxis domain={[0, 'auto']} label={{ value: 'K/BB', angle: -90, position: 'insideLeft' }} />
                                       <RechartsTooltip />
                                       <Legend />
@@ -1602,7 +1612,7 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                               <ResponsiveContainer width="100%" height="90%">
                                   <LineChart data={playerPitchingTrendData}>
                                       <CartesianGrid strokeDasharray="3 3" />
-                                      <XAxis dataKey="date" tick={{fontSize: 10}} />
+                                      <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
                                       <YAxis domain={[0, 'auto']} />
                                       <RechartsTooltip />
                                       <Legend />
