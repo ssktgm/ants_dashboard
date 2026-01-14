@@ -13,7 +13,7 @@ import DEFAULT_PITCHING_CSV_URL from './data/scorer_stats_raw_p.csv?url';
 const parseCSV = (text) => {
   const lines = text.trim().split('\n');
   if (lines.length < 2) return [];
-  
+   
   let headerLine = lines[0];
   // Remove BOM (Byte Order Mark) if it exists at the beginning of the file
   if (headerLine.charCodeAt(0) === 0xFEFF) {
@@ -21,7 +21,7 @@ const parseCSV = (text) => {
   }
   const headers = headerLine.split(',').map(h => h.trim());
   const result = [];
-  
+   
   for (let i = 1; i < lines.length; i++) {
     const currentline = lines[i].split(',');
     if (currentline.length <= 1) continue;
@@ -86,7 +86,12 @@ const COLORS = [
   "#ef4444", // Red
   "#10b981", // Green
   "#f59e0b", // Amber
-  "#8b5cf6"  // Violet
+  "#8b5cf6", // Violet
+  "#ec4899", // Pink
+  "#06b6d4", // Cyan
+  "#84cc16", // Lime
+  "#6366f1", // Indigo
+  "#d946ef"  // Fuchsia
 ];
 
 // --- Components ---
@@ -1099,7 +1104,7 @@ export default function App() {
         // Cumulative Calculation
         const cumulative = comparisonDataType === 'batting'
             ? { ab: 0, h: 0, bb: 0, hbp: 0, sf: 0, doubles: 0, triples: 0, hr: 0, so: 0 }
-            : { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0 };
+            : { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0, pitches: 0, strikes: 0 };
         
         return sortedKeys.map(key => {
             const periodRows = grouped[key];
@@ -1134,14 +1139,17 @@ export default function App() {
                     cumulative.hbp += (row['死球'] || 0);
                     cumulative.h += (row['安打'] || 0);
                     cumulative.so += (row['三振'] || 0);
+                    cumulative.pitches += (row['球数'] || 0);
+                    cumulative.strikes += (row['S数'] || 0);
                  });
                  const era = safeDiv(cumulative.er * 7, cumulative.outs / 3);
                  const whip = safeDiv(cumulative.bb + cumulative.hbp + cumulative.h, cumulative.outs / 3);
                  const kbb = safeDiv(cumulative.so, cumulative.bb);
                  const kPer7 = safeDiv(cumulative.so * 7, cumulative.outs / 3);
                  const bbPer7 = safeDiv((cumulative.bb + cumulative.hbp) * 7, cumulative.outs / 3);
+                 const strikeRate = safeDiv(cumulative.strikes, cumulative.pitches) * 100;
                  
-                 return { periodKey: key, [`${pid}_era`]: era, [`${pid}_whip`]: whip, [`${pid}_kbb`]: kbb, [`${pid}_kPer7`]: kPer7, [`${pid}_bbPer7`]: bbPer7 };
+                 return { periodKey: key, [`${pid}_era`]: era, [`${pid}_whip`]: whip, [`${pid}_kbb`]: kbb, [`${pid}_kPer7`]: kPer7, [`${pid}_bbPer7`]: bbPer7, [`${pid}_strikeRate`]: strikeRate };
             }
         });
     });
@@ -1234,7 +1242,6 @@ export default function App() {
               z: p.ops
           }));
   }, [aggregatedBatting, aggregatedPitching, comparisonMinPA, scatterX, scatterY, comparisonDataType]);
-
   // --- Render Sub-Components ---
 
   const ImportSection = () => (
@@ -1534,9 +1541,8 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
           if (comparisonSelectedPlayers.includes(pid)) {
               setComparisonSelectedPlayers(comparisonSelectedPlayers.filter(id => id !== pid));
           } else {
-              if (comparisonSelectedPlayers.length < 5) {
-                  setComparisonSelectedPlayers([...comparisonSelectedPlayers, pid]);
-              }
+              // 5人制限を撤廃
+              setComparisonSelectedPlayers([...comparisonSelectedPlayers, pid]);
           }
       };
 
@@ -1588,6 +1594,7 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
               const charts = [
                   { key: 'era', label: '防御率 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
                   { key: 'whip', label: 'WHIP 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
+                  { key: 'strikeRate', label: 'S率(%) 推移', domain: [0, 100], formatter: (v) => v.toFixed(1) },
                   { key: 'kbb', label: 'K/BB 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
                   { key: 'kPer7', label: '奪三振率(K/7) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
                   { key: 'bbPer7', label: '与四死球率(BB/7) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
@@ -1758,20 +1765,18 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                           </div>
                           <div className="flex flex-col gap-2">
                               <div className="flex justify-between items-center">
-                                <label className="text-sm font-bold text-gray-700">比較選手を選択 (最大5名):</label>
-                                <span className={`text-xs ${comparisonSelectedPlayers.length === 5 ? 'text-red-500 font-bold' : 'text-gray-500'}`}>{comparisonSelectedPlayers.length} / 5 選択中</span>
+                                <label className="text-sm font-bold text-gray-700">比較選手を選択:</label>
+                                <span className="text-xs text-gray-500">{comparisonSelectedPlayers.length} 名選択中</span>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 max-h-40 overflow-y-auto border p-2 rounded bg-gray-50">
                                   {playerList.map(p => {
                                       const isSelected = comparisonSelectedPlayers.includes(p.id);
-                                      const isDisabled = !isSelected && comparisonSelectedPlayers.length >= 5;
                                       return (
-                                          <label key={p.id} className={`flex items-center space-x-2 text-xs p-1 rounded cursor-pointer transition-colors ${isSelected ? 'bg-blue-100 font-bold text-primary-700' : isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white text-gray-600'}`}>
+                                          <label key={p.id} className={`flex items-center space-x-2 text-xs p-1 rounded cursor-pointer transition-colors ${isSelected ? 'bg-blue-100 font-bold text-primary-700' : 'hover:bg-white text-gray-600'}`}>
                                               <input 
                                                 type="checkbox" 
                                                 checked={isSelected} 
                                                 onChange={() => togglePlayerSelection(p.id)}
-                                                disabled={isDisabled}
                                                 className="rounded text-primary-600 focus:ring-primary-500"
                                               />
                                               <span className="truncate">{p.number} {p.name}</span>
@@ -2399,7 +2404,7 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
               <div>
                 <h4 className="font-semibold">分析・比較画面</h4>
                 <p className="text-sm mt-1">選手間のパフォーマンスをより深く比較・分析します。「ランキング」で特定の指標の順位を見たり、「相関分析」で2つの指標の関係性を散布図で確認したり、「一括表示」で主要指標のランキングをまとめて見ることができます。</p>
-                <p className="text-sm mt-1"><strong>New! 選手間比較:</strong> 任意の選手を最大5名まで選択し、試合別・月別・3ヶ月別の成績推移を同一グラフ上で比較できます。</p>
+                <p className="text-sm mt-1"><strong>New! 選手間比較:</strong> 任意の選手（人数制限なし）を選択し、試合別・月別・3ヶ月別の成績推移を同一グラフ上で比較できます。</p>
               </div>
             </div>
           </section>
