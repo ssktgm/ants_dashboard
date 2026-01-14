@@ -1906,8 +1906,8 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                                         return null;
                                     }}/>
                                     <Legend />
-                                    <Line type="stepAfter" dataKey="avg" name="累積打率" stroke="#3b82f6" strokeWidth={2} dot={{r: 3}} />
-                                    <Line type="stepAfter" dataKey="ops" name="累積OPS" stroke="#f59e0b" strokeWidth={2} dot={{r: 3}} />
+                                    <Line type="monotone" dataKey="avg" name="累積打率" stroke="#3b82f6" strokeWidth={2} dot={{r: 3}} />
+                                    <Line type="monotone" dataKey="ops" name="累積OPS" stroke="#f59e0b" strokeWidth={2} dot={{r: 3}} />
                                 </LineChart>
                             </ResponsiveContainer>
                         ) : <div className="h-full flex items-center justify-center text-gray-400">データがありません</div>}
@@ -1922,9 +1922,9 @@ const AllChartsView = ({ data, metricOptions, isPitching }) => {
                                     <YAxis domain={[0, 'auto']} tickFormatter={v => v.toFixed(3)} />
                                     <RechartsTooltip />
                                     <Legend />
-                                    <Area type="stepAfter" dataKey="avg" name="打率" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
-                                    <Area type="stepAfter" dataKey="obp" name="出塁率" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
-                                    <Area type="stepAfter" dataKey="slg" name="長打率" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} />
+                                    <Area type="monotone" dataKey="avg" name="打率" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
+                                    <Area type="monotone" dataKey="obp" name="出塁率" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
+                                    <Area type="monotone" dataKey="slg" name="長打率" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         ) : <div className="h-full flex items-center justify-center text-gray-400">データがありません</div>}
