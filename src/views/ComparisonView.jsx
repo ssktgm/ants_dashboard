@@ -99,6 +99,7 @@ const PlayerComparisonCharts = ({ multiPlayerTrendData, comparisonSelectedPlayer
     const pitchingCharts = [
         { key: 'era', label: '防御率 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
         { key: 'whip', label: 'WHIP 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
+        { key: 'strikeRate', label: 'S率(%) 推移', domain: [0, 100], formatter: (v) => v.toFixed(1) },
         { key: 'kPer7', label: '奪三振率(K/7) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
         { key: 'bbPer7', label: '与四死球率(BB/7) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
     ];
@@ -242,6 +243,7 @@ const ComparisonView = ({
                                 <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
                                   <button onClick={() => setComparisonTrendPeriod('game')} className={`w-full py-1.5 rounded text-xs font-bold transition-all ${comparisonTrendPeriod === 'game' ? 'bg-white text-primary-600 shadow' : 'text-gray-500 hover:bg-gray-200'}`}>試合別</button>
                                   <button onClick={() => setComparisonTrendPeriod('monthly')} className={`w-full py-1.5 rounded text-xs font-bold transition-all ${comparisonTrendPeriod === 'monthly' ? 'bg-white text-primary-600 shadow' : 'text-gray-500 hover:bg-gray-200'}`}>月別</button>
+                                  <button onClick={() => setComparisonTrendPeriod('quarterly')} className={`w-full py-1.5 rounded text-xs font-bold transition-all ${comparisonTrendPeriod === 'quarterly' ? 'bg-white text-primary-600 shadow' : 'text-gray-500 hover:bg-gray-200'}`}>3ヶ月</button>
                                 </div>
                             </div>
                          )}
