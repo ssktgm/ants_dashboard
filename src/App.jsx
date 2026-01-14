@@ -44,15 +44,14 @@ const parseCSV = (text) => {
 const safeDiv = (a, b) => b === 0 ? 0 : a / b;
 
 const parseDate = (dateStr) => {
-    if (!dateStr) return new Date(0);
+    if (!dateStr) return null;
     const d = new Date(dateStr);
-    // Check if the date is valid
-    if (!isNaN(d.getTime())) {
-        // To treat the date as local timezone midnight, not UTC
-        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    // If parsing fails or date is before 1971 (to avoid epoch issues), return null.
+    if (isNaN(d.getTime()) || d.getFullYear() < 1971) {
+        return null;
     }
-    // If parsing fails, return a safe, known date
-    return new Date(0);
+    // To treat the date as local timezone midnight, not UTC
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 };
 
 const formatRate = (rate, leadingZero = false) => {
@@ -533,7 +532,7 @@ export default function App() {
     const periods = {};
     filteredBattingData.forEach(row => {
         const d = parseDate(row['日付']);
-        if (isNaN(d.getTime())) return;
+        if (!d) return;
         const key = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
         if (!periods[key]) periods[key] = { month: key, ab: 0, h: 0, runs: 0, bb: 0, hbp: 0, sf: 0, doubles: 0, triples: 0, hr: 0 };
         
@@ -561,7 +560,7 @@ export default function App() {
     const periods = {};
     filteredPitchingData.forEach(row => {
         const d = parseDate(row['日付']);
-        if (isNaN(d.getTime())) return;
+        if (!d) return;
         const key = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
         if (!periods[key]) periods[key] = { month: key, h: 0, bb: 0, hbp: 0, so: 0, s: 0, pitches: 0 };
         const p = periods[key];
@@ -582,7 +581,7 @@ export default function App() {
   const teamTrendData = useMemo(() => {
     const getKey = (row, period) => {
         const d = parseDate(row['日付']);
-        if (isNaN(d.getTime())) return null;
+        if (!d) return null;
         const year = d.getFullYear();
         const month = d.getMonth();
 
@@ -771,9 +770,12 @@ export default function App() {
         }
     });
 
-    const sortedGames = Array.from(gamesMap.values()).sort((a, b) => {
+    const sortedGames = Array.from(gamesMap.values())
+    .filter(game => parseDate(game.date)) // Filter out games with invalid dates
+    .sort((a, b) => {
       const dateA = parseDate(a.date);
       const dateB = parseDate(b.date);
+      // No need to check for nulls here due to the filter above
       if (dateA.getTime() !== dateB.getTime()) {
         return dateA.getTime() - dateB.getTime();
       }
@@ -809,7 +811,7 @@ export default function App() {
 
     const getKey = (row, period) => {
         const d = parseDate(row['日付']);
-        if (isNaN(d.getTime())) return null;
+        if (!d) return null;
         const year = d.getFullYear();
         const month = d.getMonth();
 
@@ -915,7 +917,7 @@ export default function App() {
     if (!selectedPlayerId || trendTarget !== 'player' || trendType !== 'pitching') return [];
     const getKey = (row, period) => {
         const d = parseDate(row['日付']);
-        if (isNaN(d.getTime())) return null;
+        if (!d) return null;
         const year = d.getFullYear();
         const month = d.getMonth();
 
@@ -1024,7 +1026,7 @@ export default function App() {
 
     const getKey = (row, period) => {
         const d = parseDate(row['日付']);
-        if (isNaN(d.getTime())) return null;
+        if (!d) return null;
         const year = d.getFullYear();
         const month = d.getMonth();
 
