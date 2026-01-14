@@ -3,8 +3,14 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line, ComposedChart, AreaChart, Area
 } from 'recharts';
 import Card from '../components/Card';
+import FilterPanel from '../components/FilterPanel';
 
 const TrendsView = ({
+    activeFilters,
+    onApplyFilters,
+    categories,
+    defaultFilters,
+    clearedFilters,
     trendTarget,
     setTrendTarget,
     trendType,
@@ -286,6 +292,13 @@ const TrendsView = ({
     };
     return (
         <div className="space-y-6">
+            <FilterPanel 
+              activeFilters={activeFilters}
+              onApplyFilters={onApplyFilters}
+              categories={categories}
+              defaultFilters={defaultFilters}
+              clearedFilters={clearedFilters}
+            />
             <Card>
                 <div className="flex flex-wrap gap-4 items-center">
                     <div className="flex items-center gap-2">

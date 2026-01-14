@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Database, TrendingUp, Save, Trash2, Filter, Menu, X, BookOpen, HelpCircle, Users, LineChart as LineChartIcon, BarChart2 } from 'lucide-react';
+import { Database, Trash2, Users, LineChart as LineChartIcon, BarChart2 } from 'lucide-react';
+
+// --- Components ---
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import MobileNav from './components/MobileNav'; // Assuming MobileNav is created
 
 // --- Default Data (Import from files) ---
 import DEFAULT_BATTING_CSV_URL from './data/scorer_stats_raw_b.csv?url';
@@ -8,7 +13,6 @@ import DEFAULT_PITCHING_CSV_URL from './data/scorer_stats_raw_p.csv?url';
 // --- Utils ---
 import { parseCSV } from './utils/csv';
 import { parseDate } from './utils/date';
-import { formatRate } from './utils/formatters';
 
 // --- Hooks ---
 import { useAggregatedStats } from './hooks/useAggregatedStats';
@@ -19,11 +23,8 @@ import DashboardView from './views/DashboardView';
 import TrendsView from './views/TrendsView';
 import ComparisonView from './views/ComparisonView';
 
-// --- Components ---
-import Card from './components/Card';
-
 const ImportSection = ({ onFileUpload, importStatus, lastUpdated, onClearData }) => (
-  <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+  <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 max-w-lg mx-auto">
     <div className="text-center">
       <Database className="mx-auto h-12 w-12 text-primary-500" />
       <h3 className="mt-2 text-lg font-medium text-gray-900">データをインポート</h3>
@@ -96,47 +97,35 @@ export default function App() {
   // Comparison State
   const [comparisonMetric, setComparisonMetric] = useState('avg');
   const [comparisonMinPA, setComparisonMinPA] = useState(0); 
-  const [comparisonChartType, setComparisonChartType] = useState('ranking'); // 'ranking', 'scatter', 'all', 'chart-all', 'player-comparison'
+  const [comparisonChartType, setComparisonChartType] = useState('ranking');
   const [scatterX, setScatterX] = useState('obp');
   const [scatterY, setScatterY] = useState('slg');
   const [showScatterLabels, setShowScatterLabels] = useState(false);
   const [comparisonDataType, setComparisonDataType] = useState('batting');
   const [showAllInRankings, setShowAllInRankings] = useState(false);
-
-  // New State for Player Comparison
-  const [comparisonSelectedPlayers, setComparisonSelectedPlayers] = useState([]); // Array of player IDs
+  const [comparisonSelectedPlayers, setComparisonSelectedPlayers] = useState([]);
   const [comparisonTrendPeriod, setComparisonTrendPeriod] = useState('monthly');
+
+  const navItems = useMemo(() => [
+    { id: 'dashboard', label: 'ダッシュボード', icon: BarChart2 },
+    { id: 'trends', label: 'トレンド分析', icon: LineChartIcon },
+    { id: 'comparison', label: '選手比較', icon: Users },
+    { id: 'import', label: 'データ管理', icon: Database },
+  ], []);
 
   // Categories & Players List
   const { categories, playerList } = useMemo(() => {
     const cats = new Set();
     const players = new Map();
-
-    battingData.forEach(row => {
-        if (row['タイトル']) cats.add(row['タイトル']);
-        const pid = row['選手ID'] || row['名前'];
-        if (!players.has(pid)) {
-            players.set(pid, { id: pid, name: row['名前'], number: row['背番号'] });
-        }
+    [...battingData, ...pitchingData].forEach(row => {
+      if (row['タイトル']) cats.add(row['タイトル']);
+      const pid = row['選手ID'] || row['名前'];
+      if (pid && !players.has(pid)) {
+        players.set(pid, { id: pid, name: row['名前'], number: row['背番号'] });
+      }
     });
-
-    pitchingData.forEach(row => {
-        const pid = row['選手ID'] || row['名前'];
-        if (!players.has(pid)) {
-            players.set(pid, { id: pid, name: row['名前'], number: row['背番号'] });
-        }
-    });
-    
-    const sortedPlayers = Array.from(players.values()).sort((a, b) => {
-        const numA = parseInt(a.number) || 999;
-        const numB = parseInt(b.number) || 999;
-        return numA - numB;
-    });
-
-    return { 
-        categories: Array.from(cats).sort(),
-        playerList: sortedPlayers
-    };
+    const sortedPlayers = Array.from(players.values()).sort((a, b) => (parseInt(a.number) || 999) - (parseInt(b.number) || 999));
+    return { categories: Array.from(cats).sort(), playerList: sortedPlayers };
   }, [battingData, pitchingData]);
 
   useEffect(() => {
@@ -156,7 +145,6 @@ export default function App() {
   ], []);
 
   useEffect(() => {
-    // Reset scatter metrics when switching between batting/pitching analysis
     if (comparisonDataType === 'batting') {
         setScatterX('obp');
         setScatterY('slg');
@@ -169,36 +157,26 @@ export default function App() {
   useEffect(() => {
     const currentOptions = comparisonDataType === 'batting' ? battingMetricOptions : pitchingMetricOptions;
     if (!currentOptions.some(o => o.v === comparisonMetric)) {
-        if (comparisonDataType === 'batting') {
-            setComparisonMetric('avg');
-        } else { // pitching
-            setComparisonMetric('era');
-        }
+        setComparisonMetric(comparisonDataType === 'batting' ? 'avg' : 'era');
     }
   }, [comparisonDataType, comparisonMetric, battingMetricOptions, pitchingMetricOptions]);
 
-  // Load data & Initialize Default Data
   useEffect(() => {
     const savedBatting = localStorage.getItem('bb_stats_batting');
     const savedPitching = localStorage.getItem('bb_stats_pitching');
     const savedDate = localStorage.getItem('bb_stats_date');
-
     if (savedBatting && JSON.parse(savedBatting).length > 0) {
       setBattingData(JSON.parse(savedBatting));
       if (savedPitching) setPitchingData(JSON.parse(savedPitching));
       if (savedDate) setLastUpdated(savedDate);
     } else {
-      // Load Default Data if empty
       loadDefaultData();
     }
   }, []);
 
   const loadDefaultData = async () => {
     try {
-      const [battingRes, pitchingRes] = await Promise.all([
-        fetch(DEFAULT_BATTING_CSV_URL),
-        fetch(DEFAULT_PITCHING_CSV_URL)
-      ]);
+      const [battingRes, pitchingRes] = await Promise.all([fetch(DEFAULT_BATTING_CSV_URL), fetch(DEFAULT_PITCHING_CSV_URL)]);
       const [battingText, pitchingText] = await Promise.all([battingRes.text(), pitchingRes.text()]);
       setBattingData(parseCSV(battingText));
       setPitchingData(parseCSV(pitchingText));
@@ -210,38 +188,24 @@ export default function App() {
     }
   };
 
-  // --- Handlers ---
-
   const handleFileUpload = async (event) => {
-    const files = Array.from(event.target.files);
-    let newBatting = [...battingData];
-    let newPitching = [...pitchingData];
-    let importedCount = 0;
-
     setImportStatus("読み込み中...");
-
+    const files = Array.from(event.target.files);
+    let newBatting = [], newPitching = [];
     for (const file of files) {
       const text = await file.text();
       const data = parseCSV(text);
-      
-      if (file.name.includes('_b.csv') || (data[0] && '打席数' in data[0])) {
-        newBatting = data; 
-        importedCount++;
-      } else if (file.name.includes('_p.csv') || (data[0] && '投球回' in data[0] || '球数' in data[0])) {
-        newPitching = data;
-        importedCount++;
-      }
+      if (file.name.includes('_b.csv') || (data[0] && '打席数' in data[0])) newBatting = data;
+      else if (file.name.includes('_p.csv') || (data[0] && ('投球回' in data[0] || '球数' in data[0]))) newPitching = data;
     }
-
-    setBattingData(newBatting);
-    setPitchingData(newPitching);
-    
+    setBattingData(current => newBatting.length > 0 ? newBatting : current);
+    setPitchingData(current => newPitching.length > 0 ? newPitching : current);
     const now = new Date().toLocaleString('ja-JP');
-    localStorage.setItem('bb_stats_batting', JSON.stringify(newBatting));
-    localStorage.setItem('bb_stats_pitching', JSON.stringify(newPitching));
+    localStorage.setItem('bb_stats_batting', JSON.stringify(newBatting.length > 0 ? newBatting : battingData));
+    localStorage.setItem('bb_stats_pitching', JSON.stringify(newPitching.length > 0 ? newPitching : pitchingData));
     localStorage.setItem('bb_stats_date', now);
     setLastUpdated(now);
-    setImportStatus(`${importedCount}ファイルをインポートしました`);
+    setImportStatus(`${files.length}ファイルをインポートしました`);
     setTimeout(() => setImportStatus(""), 3000);
   };
 
@@ -259,207 +223,89 @@ export default function App() {
     setIsMenuOpen(false);
   };
 
-  // --- Filtering Logic ---
-
-  const filterData = useCallback((data, filtersToUse) => {
+  const filterData = useCallback((data, filters) => {
     return data.filter(row => {
-        const rowDate = parseDate(row['日付']); // Correctly parsed as local time midnight
-        let start = null;
-        if (filtersToUse.startDate) {
-            start = parseDate(filtersToUse.startDate); // Use the same robust parsing
-        }
-        let end = null;
-        if (filtersToUse.endDate) {
-            end = parseDate(filtersToUse.endDate);
-            end.setDate(end.getDate() + 1); // Get the very start of the next day
-        }
-
-        if (start && rowDate < start) return false;
-        if (end && rowDate >= end) return false;
-
-        if (filtersToUse.teamKeyword) {
-            const kw = filtersToUse.teamKeyword;
-            const teamA = (row['先攻'] || '');
-            const teamB = (row['後攻'] || '');
-            let isMatch;
-            try {
-                const regex = new RegExp(kw, 'i');
-                isMatch = regex.test(teamA) || regex.test(teamB);
-            } catch (e) {
-                const lowerKw = kw.toLowerCase();
-                isMatch = teamA.toLowerCase().includes(lowerKw) || teamB.toLowerCase().includes(lowerKw);
-            }
-            if (!isMatch) return false;
-        }
-
-        if (filtersToUse.category !== 'all' && row['タイトル'] !== filtersToUse.category) return false;
-
-        return true;
+      const rowDate = parseDate(row['日付']);
+      if (!rowDate) return true; // Keep rows with invalid dates? Maybe filter them out.
+      
+      const start = filters.startDate ? parseDate(filters.startDate) : null;
+      const end = filters.endDate ? parseDate(filters.endDate) : null;
+      
+      if (start && rowDate < start) return false;
+      if (end && rowDate > end) return false;
+      if (filters.teamKeyword && !`${row['先攻']}${row['後攻']}`.includes(filters.teamKeyword)) return false;
+      if (filters.category !== 'all' && row['タイトル'] !== filters.category) return false;
+      
+      return true;
     });
   }, []);
 
   const filteredBattingData = useMemo(() => filterData(battingData, activeFilters), [battingData, activeFilters, filterData]);
   const filteredPitchingData = useMemo(() => filterData(pitchingData, activeFilters), [pitchingData, activeFilters, filterData]);
 
-  // --- Aggregation & Trend Hooks ---
   const { aggregatedBatting, aggregatedPitching, teamStats } = useAggregatedStats(filteredBattingData, filteredPitchingData);
   const { monthlyBattingTrend, monthlyPitchingTrend, teamTrendData, gameByGameStats, playerBattingTrendData, playerPitchingTrendData, multiPlayerTrendData } = useTrendStats(
-    filteredBattingData, 
-    filteredPitchingData, 
-    trendPeriod, 
-    trendTarget, 
-    trendType, 
-    selectedPlayerId, 
-    comparisonChartType,
-    comparisonSelectedPlayers,
-    comparisonTrendPeriod,
-    comparisonDataType
+    filteredBattingData, filteredPitchingData, trendPeriod, trendTarget, trendType, selectedPlayerId, 
+    comparisonChartType, comparisonSelectedPlayers, comparisonTrendPeriod, comparisonDataType
   );
 
-
   const renderContent = () => {
+    const viewProps = { activeFilters, categories, defaultFilters, clearedFilters, onApplyFilters: setActiveFilters };
     switch (activeTab) {
-      case 'dashboard':
-        return <DashboardView 
+      case 'dashboard': return <DashboardView {...viewProps} teamStats={teamStats} aggregatedBatting={aggregatedBatting} monthlyBattingTrend={monthlyBattingTrend} monthlyPitchingTrend={monthlyPitchingTrend} gameByGameStats={gameByGameStats} />;
+      case 'trends': return <TrendsView 
             activeFilters={activeFilters}
+            onApplyFilters={setActiveFilters}
             categories={categories}
             defaultFilters={defaultFilters}
             clearedFilters={clearedFilters}
-            onApplyFilters={setActiveFilters}
-            teamStats={teamStats}
-            aggregatedBatting={aggregatedBatting}
-            monthlyBattingTrend={monthlyBattingTrend}
-            monthlyPitchingTrend={monthlyPitchingTrend}
-            gameByGameStats={gameByGameStats}
+            trendTarget={trendTarget} 
+            setTrendTarget={setTrendTarget} 
+            trendType={trendType} 
+            setTrendType={setTrendType} 
+            playerList={playerList} 
+            selectedPlayerId={selectedPlayerId} 
+            setSelectedPlayerId={setSelectedPlayerId} 
+            trendPeriod={trendPeriod} 
+            setTrendPeriod={setTrendPeriod} 
+            teamTrendData={teamTrendData} 
+            playerBattingTrendData={playerBattingTrendData} 
+            playerPitchingTrendData={playerPitchingTrendData} 
         />;
-      case 'trends':
-        return <TrendsView 
-            trendTarget={trendTarget}
-            setTrendTarget={setTrendTarget}
-            trendType={trendType}
-            setTrendType={setTrendType}
-            playerList={playerList}
-            selectedPlayerId={selectedPlayerId}
-            setSelectedPlayerId={setSelectedPlayerId}
-            trendPeriod={trendPeriod}
-            setTrendPeriod={setTrendPeriod}
-            teamTrendData={teamTrendData}
-            playerBattingTrendData={playerBattingTrendData}
-            playerPitchingTrendData={playerPitchingTrendData}
-        />;
-      case 'comparison':
-        return <ComparisonView
-            activeFilters={activeFilters}
-            categories={categories}
-            defaultFilters={defaultFilters}
-            clearedFilters={clearedFilters}
-            onApplyFilters={setActiveFilters}
-            comparisonMetric={comparisonMetric}
-            setComparisonMetric={setComparisonMetric}
-            comparisonMinPA={comparisonMinPA}
-            setComparisonMinPA={setComparisonMinPA}
-            comparisonChartType={comparisonChartType}
-            setComparisonChartType={setComparisonChartType}
-            scatterX={scatterX}
-            setScatterX={setScatterX}
-            scatterY={scatterY}
-            setScatterY={setScatterY}
-            showScatterLabels={showScatterLabels}
-            setShowScatterLabels={setShowScatterLabels}
-            comparisonDataType={comparisonDataType}
-            setComparisonDataType={setComparisonDataType}
-            showAllInRankings={showAllInRankings}
-            comparisonSelectedPlayers={comparisonSelectedPlayers}
-            setComparisonSelectedPlayers={setComparisonSelectedPlayers}
-            comparisonTrendPeriod={comparisonTrendPeriod}
-            setComparisonTrendPeriod={setComparisonTrendPeriod}
-            battingMetricOptions={battingMetricOptions}
-            pitchingMetricOptions={pitchingMetricOptions}
-            playerList={playerList}
-            multiPlayerTrendData={multiPlayerTrendData}
-            aggregatedBatting={aggregatedBatting}
-            aggregatedPitching={aggregatedPitching}
-        />;
-      case 'import':
-        return <ImportSection 
-          onFileUpload={handleFileUpload}
-          importStatus={importStatus}
-          lastUpdated={lastUpdated}
-          onClearData={clearData}
-        />;
-      default:
-        return <div>Not Found</div>;
+      case 'comparison': return <ComparisonView {...viewProps} comparisonMetric={comparisonMetric} setComparisonMetric={setComparisonMetric} comparisonMinPA={comparisonMinPA} setComparisonMinPA={setComparisonMinPA} comparisonChartType={comparisonChartType} setComparisonChartType={setComparisonChartType} scatterX={scatterX} setScatterX={setScatterX} scatterY={scatterY} setScatterY={setScatterY} showScatterLabels={showScatterLabels} setShowScatterLabels={setShowScatterLabels} comparisonDataType={comparisonDataType} setComparisonDataType={setComparisonDataType} showAllInRankings={showAllInRankings} comparisonSelectedPlayers={comparisonSelectedPlayers} setComparisonSelectedPlayers={setComparisonSelectedPlayers} comparisonTrendPeriod={comparisonTrendPeriod} setComparisonTrendPeriod={setComparisonTrendPeriod} battingMetricOptions={battingMetricOptions} pitchingMetricOptions={pitchingMetricOptions} playerList={playerList} multiPlayerTrendData={multiPlayerTrendData} aggregatedBatting={aggregatedBatting} aggregatedPitching={aggregatedPitching} />;
+      case 'import': return <ImportSection onFileUpload={handleFileUpload} importStatus={importStatus} lastUpdated={lastUpdated} onClearData={clearData} />;
+      default: return <div>Not Found</div>;
     }
   };
 
-  const navItems = [
-    { id: 'dashboard', label: 'ダッシュボード', icon: BarChart2 },
-    { id: 'trends', label: 'トレンド分析', icon: LineChartIcon },
-    { id: 'comparison', label: '選手比較', icon: Users },
-    { id: 'import', label: 'データ管理', icon: Database },
-  ];
+  const pageTitle = navItems.find(item => item.id === activeTab)?.label || 'Dashboard';
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 flex">
-      {/* Sidebar */}
-      <aside className={`bg-white border-r border-gray-200 transition-all duration-300 ${isMenuOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col`}>
-          <div className="flex items-center justify-center h-16 border-b">
-              <img src="/logo.png" alt="Ants" className={`transition-all ${isMenuOpen ? 'h-10' : 'h-8'}`} />
-          </div>
-          <nav className="flex-1 px-4 py-4 space-y-2">
-              {navItems.map(item => (
-                  <button 
-                      key={item.id}
-                      onClick={() => handleNavClick(item.id)}
-                      className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeTab === item.id ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-100'}`}
-                      title={item.label}
-                  >
-                      <item.icon size={20} />
-                      {isMenuOpen && <span className="ml-4 font-semibold">{item.label}</span>}
-                  </button>
-              ))}
-          </nav>
-          <div className="p-4 border-t">
-              <button 
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-100"
-              >
-                  {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
-                  {isMenuOpen && <span className="ml-4 font-semibold">折りたたむ</span>}
-              </button>
-          </div>
-      </aside>
-
-      {/* Main Content */}
+      <Sidebar 
+        activeTab={activeTab}
+        onNavClick={handleNavClick}
+        isMenuOpen={isMenuOpen}
+        onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
+        navItems={navItems}
+      />
+      <MobileNav
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        onNavClick={handleNavClick}
+        activeTab={activeTab}
+        navItems={navItems}
+      />
+      
       <div className="flex-1 flex flex-col">
-          <header className="bg-white shadow-sm flex items-center justify-between p-4 border-b md:hidden">
-              <img src="/logo.png" alt="Ants" className="h-8" />
-              <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                  {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-          </header>
-
-          {/* Mobile Menu */}
-          {isMenuOpen && (
-              <div className="md:hidden bg-white border-b">
-                  <nav className="p-4 space-y-2">
-                      {navItems.map(item => (
-                          <button 
-                              key={item.id}
-                              onClick={() => handleNavClick(item.id)}
-                              className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeTab === item.id ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-100'}`}
-                          >
-                              <item.icon size={20} />
-                              <span className="ml-4 font-semibold">{item.label}</span>
-                          </button>
-                      ))}
-                  </nav>
-              </div>
-          )}
-
-          <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-              {renderContent()}
-          </main>
+        <Header 
+          title={pageTitle}
+          isMenuOpen={isMenuOpen}
+          onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
+        />
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+          {renderContent()}
+        </main>
       </div>
     </div>
   );
