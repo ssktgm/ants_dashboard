@@ -13,7 +13,7 @@ const MobileNav = ({ isOpen, onClose, onNavClick, activeTab, navItems }) => {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-center h-16 border-b">
-            <img src="/logo.png" alt="Ants" className="h-10" />
+            <h1 className="text-lg font-bold text-gray-800">Ants Dashboard</h1>
         </div>
         <nav className="mt-4">
           {navItems.map(item => (

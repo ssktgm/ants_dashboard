@@ -2,9 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Database, Trash2, Users, LineChart as LineChartIcon, BarChart2 } from 'lucide-react';
 
 // --- Components ---
-import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import MobileNav from './components/MobileNav'; // Assuming MobileNav is created
+import MobileNav from './components/MobileNav';
 
 // --- Default Data (Import from files) ---
 import DEFAULT_BATTING_CSV_URL from './data/scorer_stats_raw_b.csv?url';
@@ -278,16 +277,14 @@ export default function App() {
     }
   };
 
-  const pageTitle = navItems.find(item => item.id === activeTab)?.label || 'Dashboard';
-
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 flex">
-      <Sidebar 
-        activeTab={activeTab}
-        onNavClick={handleNavClick}
+    <div className="min-h-screen bg-gray-50 text-gray-800 flex flex-col">
+      <Header 
         isMenuOpen={isMenuOpen}
         onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
         navItems={navItems}
+        activeTab={activeTab}
+        onNavClick={handleNavClick}
       />
       <MobileNav
         isOpen={isMenuOpen}
@@ -298,11 +295,6 @@ export default function App() {
       />
       
       <div className="flex-1 flex flex-col">
-        <Header 
-          title={pageTitle}
-          isMenuOpen={isMenuOpen}
-          onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
-        />
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {renderContent()}
         </main>
