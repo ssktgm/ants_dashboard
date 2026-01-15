@@ -43,6 +43,7 @@ const AllRankingsView = ({ battingData, pitchingData, minPA, minInnings, showAll
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4">
             <RankingList title="打率" data={filteredBatting} dataKey="avg" displayKey="avg" formatFunc={formatBattingRate} />
             <RankingList title="OPS" data={filteredBatting} dataKey="ops" displayKey="ops" formatFunc={formatOps} />
+            <RankingList title="出塁率" data={filteredBatting} dataKey="obp" displayKey="obp" formatFunc={formatBattingRate} />
             <RankingList title="本塁打" data={filteredBatting} dataKey="hr" displayKey="hr" />
             <RankingList title="打点" data={filteredBatting} dataKey="rbi" displayKey="rbi" />
             <RankingList title="盗塁" data={filteredBatting} dataKey="sb" displayKey="sb" />
@@ -97,6 +98,7 @@ const PlayerComparisonCharts = ({ multiPlayerTrendData, comparisonSelectedPlayer
     const battingCharts = [
         { key: 'avg', label: '打率 推移', domain: [0, 0.6], formatter: (v) => v.toFixed(3) },
         { key: 'ops', label: 'OPS 推移', domain: [0, 1.2], formatter: (v) => v.toFixed(3) },
+        { key: 'obp', label: '出塁率 推移', domain: [0, 0.7], formatter: (v) => v.toFixed(3) },
         { key: 'bbRate', label: '四死球率(%) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(1) },
         { key: 'soRate', label: '三振率(%) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(1) },
     ];
