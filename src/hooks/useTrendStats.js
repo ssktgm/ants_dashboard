@@ -146,7 +146,7 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
     filteredPitchingData.forEach(row => {
         const key = getKey(row, trendPeriod);
         if (!key) return;
-        if (!pitchingPeriods[key]) pitchingPeriods[key] = { periodKey: key, outs: 0, er: 0, h: 0, bb: 0, hbp: 0, so: 0, s: 0, pitches: 0 };
+        if (!pitchingPeriods[key]) pitchingPeriods[key] = { periodKey: key, outs: 0, er: 0, h: 0, bb: 0, hbp: 0, so: 0, s: 0, pitches: 0, bf: 0 };
         
         const p = pitchingPeriods[key];
         p.outs += (row['アウト数'] || 0);
@@ -157,6 +157,7 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
         p.so += (row['三振'] || 0);
         p.s += (row['S数'] || 0);
         p.pitches += (row['球数'] || 0);
+        p.bf += (row['打者'] || 0);
     });
     
     const pitchingResult = Object.values(pitchingPeriods).sort((a, b) => {
@@ -181,7 +182,9 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
         const kPer7 = safeDiv(m.so * 7, innings);
         const bbPer7 = safeDiv((m.bb + m.hbp) * 7, innings);
         const strikeRate = safeDiv(m.s, m.pitches) * 100;
-        
+        const kRate = safeDiv(m.so, m.bf);
+        const bbRate = safeDiv(m.bb + m.hbp, m.bf);
+
         let displayKey = m.periodKey;
         if (trendPeriod === 'game') {
            const dateStr = m.periodKey.split(' vs ')[0];
@@ -200,7 +203,9 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
             whip: Number(whip.toFixed(2)), 
             kPer7: Number(kPer7.toFixed(2)), 
             bbPer7: Number(bbPer7.toFixed(2)), 
-            strikeRate: Number(strikeRate.toFixed(1)) 
+            strikeRate: Number(strikeRate.toFixed(1)),
+            kRate: Number(kRate.toFixed(3)),
+            bbRate: Number(bbRate.toFixed(3)),
         };
     });
 
@@ -440,7 +445,7 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
         return a.localeCompare(b);
     });
 
-    let cumulative = { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0 };
+    let cumulative = { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0, bf: 0 };
     
     return sortedKeys.map(key => {
         const periodRows = grouped[key];
@@ -453,8 +458,9 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
             acc.so += (row['三振'] || 0);
             acc.pitches += (row['球数'] || 0);
             acc.strikes += (row['S数'] || 0);
+            acc.bf += (row['打者'] || 0);
             return acc;
-        }, { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0, pitches: 0, strikes: 0 });
+        }, { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0, pitches: 0, strikes: 0, bf: 0 });
 
         Object.keys(cumulative).forEach(statKey => {
             cumulative[statKey] += periodStats[statKey];
@@ -465,6 +471,8 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
         const kbb = safeDiv(cumulative.so, cumulative.bb);
         const kPer7 = safeDiv(cumulative.so * 7, cumulative.outs / 3);
         const bbPer7 = safeDiv((cumulative.bb + cumulative.hbp) * 7, cumulative.outs / 3);
+        const kRate = safeDiv(cumulative.so, cumulative.bf);
+        const bbRate = safeDiv(cumulative.bb + cumulative.hbp, cumulative.bf);
 
         const innings = periodStats.outs / 3;
         const strikeRate = safeDiv(periodStats.strikes, periodStats.pitches) * 100;
@@ -488,6 +496,8 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
             kPer7: Number(kPer7.toFixed(2)),
             bbPer7: Number(bbPer7.toFixed(2)),
             strikeRate: Number(strikeRate.toFixed(1)),
+            kRate: Number(kRate.toFixed(3)),
+            bbRate: Number(bbRate.toFixed(3)),
             bb: periodStats.bb,
             hbp: periodStats.hbp,
             pitches: periodStats.pitches
@@ -553,7 +563,7 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
             // Cumulative Calculation
             const cumulative = comparisonDataType === 'batting'
                 ? { ab: 0, h: 0, bb: 0, hbp: 0, sf: 0, doubles: 0, triples: 0, hr: 0, so: 0 }
-                : { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0, pitches: 0, strikes: 0 };
+                : { outs: 0, er: 0, bb: 0, hbp: 0, h: 0, so: 0, pitches: 0, strikes: 0, bf: 0 };
             
             return sortedKeys.map(key => {
                 const periodRows = grouped[key];
@@ -590,6 +600,7 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
                         cumulative.so += (row['三振'] || 0);
                         cumulative.pitches += (row['球数'] || 0);
                         cumulative.strikes += (row['S数'] || 0);
+                        cumulative.bf += (row['打者'] || 0);
                     });
                     const era = safeDiv(cumulative.er * 7, cumulative.outs / 3);
                     const whip = safeDiv(cumulative.bb + cumulative.hbp + cumulative.h, cumulative.outs / 3);
@@ -597,8 +608,10 @@ export const useTrendStats = (filteredBattingData, filteredPitchingData, trendPe
                     const kPer7 = safeDiv(cumulative.so * 7, cumulative.outs / 3);
                     const bbPer7 = safeDiv((cumulative.bb + cumulative.hbp) * 7, cumulative.outs / 3);
                     const strikeRate = safeDiv(cumulative.strikes, cumulative.pitches) * 100;
+                    const kRate = safeDiv(cumulative.so, cumulative.bf);
+                    const bbRate = safeDiv(cumulative.bb + cumulative.hbp, cumulative.bf);
                     
-                    return { periodKey: key, [`${pid}_era`]: era, [`${pid}_whip`]: whip, [`${pid}_kbb`]: kbb, [`${pid}_kPer7`]: kPer7, [`${pid}_bbPer7`]: bbPer7, [`${pid}_strikeRate`]: strikeRate };
+                    return { periodKey: key, [`${pid}_era`]: era, [`${pid}_whip`]: whip, [`${pid}_kbb`]: kbb, [`${pid}_kPer7`]: kPer7, [`${pid}_bbPer7`]: bbPer7, [`${pid}_strikeRate`]: strikeRate, [`${pid}_kRate`]: kRate, [`${pid}_bbRate`]: bbRate };
                 }
             });
         });

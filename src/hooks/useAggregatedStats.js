@@ -60,7 +60,8 @@ export const useAggregatedStats = (filteredBattingData, filteredPitchingData) =>
         if (!stats[id]) {
             stats[id] = {
             id: row['選手ID'], name: row['名前'], number: row['背番号'],
-            games: 0, outs: 0, h: 0, r: 0, er: 0, bb: 0, hbp: 0, so: 0, win: 0, loss: 0, sv: 0
+            games: 0, outs: 0, h: 0, r: 0, er: 0, bb: 0, hbp: 0, so: 0, win: 0, loss: 0, sv: 0,
+            bf: 0
             };
         }
         const s = stats[id];
@@ -75,6 +76,7 @@ export const useAggregatedStats = (filteredBattingData, filteredPitchingData) =>
         s.win += (row['勝数'] || 0);
         s.loss += (row['負数'] || 0);
         s.sv += (row['セーブ'] || 0);
+        s.bf += (row['打者'] || 0);
         });
 
         return Object.values(stats).map(s => {
@@ -82,6 +84,10 @@ export const useAggregatedStats = (filteredBattingData, filteredPitchingData) =>
         const era = safeDiv(s.er * 7, s.outs / 3);
         const whip = safeDiv(s.bb + s.hbp + s.h, s.outs / 3);
         const kbb = safeDiv(s.so, s.bb);
+        const kRate = safeDiv(s.so, s.bf);
+        const bbRate = safeDiv(s.bb + s.hbp, s.bf);
+        const kPer7 = safeDiv(s.so * 7, s.outs / 3);
+        const bbPer7 = safeDiv(s.bb * 7, s.outs / 3);
 
         return {
             ...s,
@@ -89,6 +95,10 @@ export const useAggregatedStats = (filteredBattingData, filteredPitchingData) =>
             era: Number(era.toFixed(2)), 
             whip: Number(whip.toFixed(2)), 
             kbb: Number(kbb.toFixed(2)),
+            kRate: Number(kRate.toFixed(3)),
+            bbRate: Number(bbRate.toFixed(3)),
+            kPer7: Number(kPer7.toFixed(2)),
+            bbPer7: Number(bbPer7.toFixed(2)),
             inningsVal: s.outs / 3
         };
         }).sort((a, b) => a.era - b.era);

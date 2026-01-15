@@ -39,7 +39,7 @@ const TrendsView = ({
                               <LineChart data={playerBattingTrendData}>
                                   <CartesianGrid strokeDasharray="3 3" />
                                   <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
-                                  <YAxis domain={[0, 'auto']} />
+                                  <YAxis domain={[0, 'auto']} tickFormatter={(v) => v.toFixed(3)} />
                                   <RechartsTooltip content={({ active, payload, label }) => {
                                       if (active && payload && payload.length) {
                                           return (
@@ -48,7 +48,7 @@ const TrendsView = ({
                                                   <p className="text-gray-500 text-xs mb-2">vs {payload[0].payload.opponent}</p>
                                                   {payload.map(p => (
                                                       <p key={p.name} style={{color: p.color}}>
-                                                          {p.name}: {p.value}
+                                                          {p.name}: {p.value.toFixed(3)}
                                                       </p>
                                                   ))}
                                               </div>
@@ -71,7 +71,7 @@ const TrendsView = ({
                                   <CartesianGrid strokeDasharray="3 3" />
                                   <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
                                   <YAxis domain={[0, 'auto']} tickFormatter={v => v.toFixed(3)} />
-                                  <RechartsTooltip />
+                                  <RechartsTooltip formatter={(v) => v.toFixed(3)} />
                                   <Legend />
                                   <Area type="monotone" dataKey="avg" name="打率" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
                                   <Area type="monotone" dataKey="obp" name="出塁率" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
@@ -87,8 +87,8 @@ const TrendsView = ({
                               <LineChart data={playerBattingTrendData}>
                                   <CartesianGrid strokeDasharray="3 3" />
                                   <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
-                                  <YAxis domain={[0, 'auto']} unit="%" />
-                                  <RechartsTooltip />
+                                  <YAxis domain={[0, 'auto']} unit="%" tickFormatter={(v) => v.toFixed(1)} />
+                                  <RechartsTooltip formatter={(v) => `${v.toFixed(1)}%`} />
                                   <Legend />
                                   <Line type="monotone" dataKey="bbRate" name="累積四死球率(BB%)" stroke="#10b981" strokeWidth={2} dot={{r: 3}} />
                                   <Line type="monotone" dataKey="soRate" name="累積三振率(K%)" stroke="#ef4444" strokeWidth={2} dot={{r: 3}} />
@@ -169,17 +169,33 @@ const TrendsView = ({
                         ) : <div className="h-full flex items-center justify-center text-gray-400">データがありません</div>}
                     </Card>
                     <Card className="h-96">
-                        <h3 className="text-lg font-bold text-gray-700 mb-4">累積 奪三振率・与四死球率推移</h3>
+                        <h3 className="text-lg font-bold text-gray-700 mb-4">累積 K/7・BB/7 推移</h3>
                         {playerPitchingTrendData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="90%">
                                 <LineChart data={playerPitchingTrendData}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
-                                    <YAxis domain={[0, 'auto']} label={{ value: 'Rate (/7inn)', angle: -90, position: 'insideLeft' }} />
-                                    <RechartsTooltip />
+                                    <YAxis domain={[0, 'auto']} label={{ value: 'K/7, BB/7', angle: -90, position: 'insideLeft' }} tickFormatter={(v) => v.toFixed(2)} />
+                                    <RechartsTooltip formatter={(value) => value.toFixed(2)} />
                                     <Legend />
-                                    <Line type="monotone" dataKey="kPer7" name="奪三振率" stroke="#3b82f6" strokeWidth={2} dot={{r: 3}} />
-                                    <Line type="monotone" dataKey="bbPer7" name="与四死球率" stroke="#ef4444" strokeWidth={2} dot={{r: 3}} />
+                                    <Line type="monotone" dataKey="kPer7" name="K/7" stroke="#3b82f6" strokeWidth={2} dot={{r: 3}} />
+                                    <Line type="monotone" dataKey="bbPer7" name="BB/7" stroke="#ef4444" strokeWidth={2} dot={{r: 3}} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : <div className="h-full flex items-center justify-center text-gray-400">データがありません</div>}
+                    </Card>
+                    <Card className="h-96">
+                        <h3 className="text-lg font-bold text-gray-700 mb-4">累積 奪三振率・与四死球率 推移</h3>
+                        {playerPitchingTrendData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="90%">
+                                <LineChart data={playerPitchingTrendData}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
+                                    <YAxis domain={[0, 'auto']} tickFormatter={(v) => `${(v * 100).toFixed(1)}%`} />
+                                    <RechartsTooltip formatter={(value) => `${(value * 100).toFixed(1)}%`} />
+                                    <Legend />
+                                    <Line type="monotone" dataKey="kRate" name="奪三振率" stroke="#10b981" strokeWidth={2} dot={{r: 3}} />
+                                    <Line type="monotone" dataKey="bbRate" name="与四死球率" stroke="#f59e0b" strokeWidth={2} dot={{r: 3}} />
                                 </LineChart>
                             </ResponsiveContainer>
                         ) : <div className="h-full flex items-center justify-center text-gray-400">データがありません</div>}
@@ -191,8 +207,8 @@ const TrendsView = ({
                                 <AreaChart data={playerPitchingTrendData}>
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="periodKey" tick={{fontSize: 10}} />
-                                    <YAxis domain={[0, 'auto']} />
-                                    <RechartsTooltip />
+                                    <YAxis domain={[0, 'auto']} tickFormatter={(v) => v.toFixed(2)} />
+                                    <RechartsTooltip formatter={(value) => value.toFixed(2)} />
                                     <Legend />
                                     <Area type="monotone" dataKey="kbb" name="K/BB" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
                                 </AreaChart>
@@ -214,8 +230,8 @@ const TrendsView = ({
                             <LineChart data={teamTrendData.batting}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="displayKey" tick={{fontSize: 10}} />
-                                <YAxis domain={[0, 'auto']} />
-                                <RechartsTooltip />
+                                <YAxis domain={[0, 'auto']} tickFormatter={(v) => v.toFixed(3)} />
+                                <RechartsTooltip formatter={(v) => v.toFixed(3)} />
                                 <Legend />
                                 <Line type="monotone" dataKey="avg" name="打率" stroke="#3b82f6" strokeWidth={2} />
                                 <Line type="monotone" dataKey="ops" name="OPS" stroke="#f59e0b" strokeWidth={2} />
@@ -228,8 +244,8 @@ const TrendsView = ({
                             <LineChart data={teamTrendData.batting}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="displayKey" tick={{fontSize: 10}} />
-                                <YAxis domain={[0, 'auto']} unit="%" />
-                                <RechartsTooltip />
+                                <YAxis domain={[0, 'auto']} unit="%" tickFormatter={(v) => v.toFixed(1)} />
+                                <RechartsTooltip formatter={(v) => `${v.toFixed(1)}%`} />
                                 <Legend />
                                 <Line type="monotone" dataKey="bbRate" name="四死球率(BB%)" stroke="#10b981" strokeWidth={2} />
                                 <Line type="monotone" dataKey="soRate" name="三振率(K%)" stroke="#ef4444" strokeWidth={2} />
@@ -278,11 +294,25 @@ const TrendsView = ({
                             <LineChart data={teamTrendData.pitching}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="displayKey" tick={{fontSize: 10}} />
-                                <YAxis domain={[0, 'auto']} />
-                                <RechartsTooltip />
+                                <YAxis domain={[0, 'auto']} tickFormatter={(v) => v.toFixed(2)}/>
+                                <RechartsTooltip formatter={(value) => value.toFixed(2)} />
                                 <Legend />
-                                <Line type="monotone" dataKey="kPer7" name="奪三振率" stroke="#3b82f6" strokeWidth={2} />
-                                <Line type="monotone" dataKey="bbPer7" name="与四死球率" stroke="#ef4444" strokeWidth={2} />
+                                <Line type="monotone" dataKey="kPer7" name="K/7" stroke="#3b82f6" strokeWidth={2} />
+                                <Line type="monotone" dataKey="bbPer7" name="BB/7" stroke="#ef4444" strokeWidth={2} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </Card>
+                    <Card className="h-96">
+                        <h3 className="text-lg font-bold text-gray-700 mb-4">チーム投手成績推移 (奪三振率, 与四死球率)</h3>
+                        <ResponsiveContainer width="100%" height="90%">
+                            <LineChart data={teamTrendData.pitching}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="displayKey" tick={{fontSize: 10}} />
+                                <YAxis domain={[0, 'auto']} tickFormatter={(v) => `${(v * 100).toFixed(1)}%`} />
+                                <RechartsTooltip formatter={(value) => `${(value * 100).toFixed(1)}%`} />
+                                <Legend />
+                                <Line type="monotone" dataKey="kRate" name="奪三振率" stroke="#10b981" strokeWidth={2} />
+                                <Line type="monotone" dataKey="bbRate" name="与四死球率" stroke="#f59e0b" strokeWidth={2} />
                             </LineChart>
                         </ResponsiveContainer>
                     </Card>

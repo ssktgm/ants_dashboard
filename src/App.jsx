@@ -140,6 +140,8 @@ export default function App() {
   ], []);
   const pitchingMetricOptions = useMemo(() => [
       { v: 'era', l: '防御率' }, { v: 'whip', l: 'WHIP' }, { v: 'kbb', l: 'K/BB' },
+      { v: 'kPer7', l: 'K/7' }, { v: 'bbPer7', l: 'BB/7' },
+      { v: 'kRate', l: '奪三振率' }, { v: 'bbRate', l: '与四死球率' },
       { v: 'so', l: '奪三振' }, { v: 'win', l: '勝利数' }, { v: 'displayInnings', l: '投球回' }
   ], []);
 

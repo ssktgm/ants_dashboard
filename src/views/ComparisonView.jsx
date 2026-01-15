@@ -5,7 +5,7 @@ import {
 import { Users, BarChart3, GitCompareArrows, ListOrdered, ClipboardList, CheckSquare } from 'lucide-react';
 import Card from '../components/Card';
 import FilterPanel from '../components/FilterPanel';
-import { formatRate } from '../utils/formatters';
+import { formatBattingRate, formatOps, formatPitchingStat, formatPercentage } from '../utils/formatters';
 
 const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16", "#6366f1", "#d946ef"];
 
@@ -41,13 +41,17 @@ const AllRankingsView = ({ battingData, pitchingData, minPA, minInnings, showAll
 
     return (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4">
-            <RankingList title="打率" data={filteredBatting} dataKey="avg" displayKey="avg" formatFunc={(v) => formatRate(v)} />
-            <RankingList title="OPS" data={filteredBatting} dataKey="ops" displayKey="ops" formatFunc={(v) => v.toFixed(3)} />
+            <RankingList title="打率" data={filteredBatting} dataKey="avg" displayKey="avg" formatFunc={formatBattingRate} />
+            <RankingList title="OPS" data={filteredBatting} dataKey="ops" displayKey="ops" formatFunc={formatOps} />
             <RankingList title="本塁打" data={filteredBatting} dataKey="hr" displayKey="hr" />
             <RankingList title="打点" data={filteredBatting} dataKey="rbi" displayKey="rbi" />
             <RankingList title="盗塁" data={filteredBatting} dataKey="sb" displayKey="sb" />
-            <RankingList title="防御率" data={filteredPitching} dataKey="era" displayKey="era" isAsc={true} formatFunc={(v) => v.toFixed(2)} />
-            <RankingList title="WHIP" data={filteredPitching} dataKey="whip" displayKey="whip" isAsc={true} formatFunc={(v) => v.toFixed(2)} />
+            <RankingList title="防御率" data={filteredPitching} dataKey="era" displayKey="era" isAsc={true} formatFunc={formatPitchingStat} />
+            <RankingList title="WHIP" data={filteredPitching} dataKey="whip" displayKey="whip" isAsc={true} formatFunc={formatPitchingStat} />
+            <RankingList title="K/7" data={filteredPitching} dataKey="kPer7" displayKey="kPer7" formatFunc={formatPitchingStat} />
+            <RankingList title="BB/7" data={filteredPitching} dataKey="bbPer7" displayKey="bbPer7" isAsc={true} formatFunc={formatPitchingStat} />
+            <RankingList title="奪三振率" data={filteredPitching} dataKey="kRate" displayKey="kRate" formatFunc={formatPercentage} />
+            <RankingList title="与四死球率" data={filteredPitching} dataKey="bbRate" displayKey="bbRate" isAsc={true} formatFunc={formatPercentage} />
             <RankingList title="奪三振" data={filteredPitching} dataKey="so" displayKey="so" />
         </div>
     );
@@ -100,8 +104,10 @@ const PlayerComparisonCharts = ({ multiPlayerTrendData, comparisonSelectedPlayer
         { key: 'era', label: '防御率 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
         { key: 'whip', label: 'WHIP 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
         { key: 'strikeRate', label: 'S率(%) 推移', domain: [0, 100], formatter: (v) => v.toFixed(1) },
-        { key: 'kPer7', label: '奪三振率(K/7) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
-        { key: 'bbPer7', label: '与四死球率(BB/7) 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
+        { key: 'kPer7', label: 'K/7 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
+        { key: 'bbPer7', label: 'BB/7 推移', domain: [0, 'auto'], formatter: (v) => v.toFixed(2) },
+        { key: 'kRate', label: '奪三振率 推移', domain: [0, 'auto'], formatter: (v) => `${(v*100).toFixed(1)}%` },
+        { key: 'bbRate', label: '与四死球率 推移', domain: [0, 'auto'], formatter: (v) => `${(v*100).toFixed(1)}%` },
     ];
     const charts = comparisonDataType === 'batting' ? battingCharts : pitchingCharts;
 
@@ -161,13 +167,16 @@ const ComparisonView = ({
         const isPitching = comparisonDataType === 'pitching';
         const data = isPitching ? aggregatedPitching.filter(p => p.inningsVal >= comparisonMinPA) : aggregatedBatting.filter(p => p.pa >= comparisonMinPA);
         const sortKey = (isPitching && comparisonMetric === 'displayInnings') ? 'inningsVal' : comparisonMetric;
-        const sortAsc = ['era', 'whip'].includes(comparisonMetric);
+        const sortAsc = ['era', 'whip', 'bbPer7', 'bbRate'].includes(comparisonMetric);
 
         return [...data].sort((a, b) => (sortAsc ? (a[sortKey] ?? Infinity) - (b[sortKey] ?? Infinity) : (b[sortKey] ?? -Infinity) - (a[sortKey] ?? -Infinity)))
             .map(p => {
                 const value = p[sortKey];
                 let displayValue = value;
-                if (['avg', 'obp'].includes(comparisonMetric)) displayValue = formatRate(value);
+                if (['avg', 'obp', 'slg'].includes(comparisonMetric)) displayValue = formatBattingRate(value);
+                else if (comparisonMetric === 'ops') displayValue = formatOps(value);
+                else if (['era', 'whip', 'kPer7', 'bbPer7', 'kbb'].includes(comparisonMetric)) displayValue = formatPitchingStat(value);
+                else if (['kRate', 'bbRate'].includes(comparisonMetric)) displayValue = formatPercentage(value);
                 else if (typeof value === 'number' && !Number.isInteger(value)) displayValue = value.toFixed(3);
                 return { name: p.name, value, displayValue };
             });

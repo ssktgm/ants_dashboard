@@ -6,7 +6,7 @@ import { Activity, Award, AlertCircle, TrendingUp } from 'lucide-react';
 import Card from '../components/Card';
 import StatCard from '../components/StatCard';
 import FilterPanel from '../components/FilterPanel';
-import { formatRate } from '../utils/formatters';
+import { formatBattingRate, formatPitchingStat } from '../utils/formatters';
 
 const DashboardView = ({
     activeFilters,
@@ -46,7 +46,7 @@ const DashboardView = ({
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" tick={{fontSize: 12}} />
               <YAxis yAxisId="left" orientation="left" stroke="#8884d8" domain={[0, 'auto']} />
-              <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" domain={[0, 0.6]} tickFormatter={(val) => formatRate(val)} />
+              <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" domain={[0, 0.6]} tickFormatter={(val) => formatBattingRate(val)} />
               <RechartsTooltip />
               <Legend />
               <Bar yAxisId="left" dataKey="runs" name="得点" fill="#8884d8" barSize={20} />
@@ -131,7 +131,7 @@ const DashboardView = ({
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="label" tick={{fontSize: 10}} angle={-45} textAnchor="end" height={70} interval={'preserveStartEnd'} />
                 <YAxis yAxisId="left" orientation="left" stroke="#8884d8" label={{ value: '得失点', angle: -90, position: 'insideLeft' }} />
-                <YAxis yAxisId="right" orientation="right" stroke="#10b981" domain={[0, 1]} tickFormatter={(val) => formatRate(val)} label={{ value: '勝率', angle: 90, position: 'insideRight' }} />
+                <YAxis yAxisId="right" orientation="right" stroke="#10b981" domain={[0, 1]} tickFormatter={(val) => formatBattingRate(val)} label={{ value: '勝率', angle: 90, position: 'insideRight' }} />
                 <RechartsTooltip content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                         const data = payload[0].payload;
@@ -145,7 +145,7 @@ const DashboardView = ({
                                 <p className="text-gray-500 text-xs mb-2">スコア: {data.scoreText}</p>
                                 {runsScoredPayload && <p style={{color: runsScoredPayload.color}}>得点: {data.runsScored}</p>}
                                 {runsAllowedPayload && <p style={{color: runsAllowedPayload.color}}>失点: {data.runsAllowed}</p>}
-                                {winningPercentagePayload && <p style={{color: winningPercentagePayload.color}}>勝率: {formatRate(data.winningPercentage)}</p>}
+                                {winningPercentagePayload && <p style={{color: winningPercentagePayload.color}}>勝率: {formatBattingRate(data.winningPercentage)}</p>}
                             </div>
                         );
                     }
