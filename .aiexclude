@@ -1,0 +1,7 @@
+# ライブラリ
+node_modules/
+.venv/
+
+# ビルドとログ
+dist/
+*.log
