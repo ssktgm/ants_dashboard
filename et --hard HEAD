@@ -1,0 +1,228 @@
+[33mcommit 2c29750af7489f4aeb0a5760fc1a11e08daf760e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Sun Feb 22 13:40:28 2026 +0000
+
+    feat: Add player statistics for February 2026 matches in scorer_stats_raw files
+
+[33mcommit 770bd96547cc9375f860320bc459e8e80831f1da[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Wed Feb 18 12:33:42 2026 +0000
+
+    feat: Add new player statistics for February 2026 matches in scorer_stats_raw files
+
+[33mcommit 82a638144a098ee15ca6d1c1d1c8060710aad47f[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Thu Jan 15 12:36:05 2026 +0000
+
+    feat: Add on-base percentage (OBP) ranking and trend chart to ComparisonView
+
+[33mcommit 68f0950c22a0d73da78cabf53fb63f7f5b55ffac[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Thu Jan 15 12:26:28 2026 +0000
+
+    feat: Add new pitching metrics and improve formatting functions for better data visualization
+
+[33mcommit d1785ff5b82a3dfd2c887e4d34ad21cda26e0477[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Thu Jan 15 00:12:15 2026 +0000
+
+    feat: Update titles and improve header navigation for better user experience
+
+[33mcommit 88a37acdca5f1ba4672fb652db56535c744575e2[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Wed Jan 14 16:14:24 2026 +0000
+
+    feat: Add strike rate chart and quarterly trend period option to ComparisonView
+
+[33mcommit 8455818b48f116b123025ffd6b05b8d6601a5b95[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Wed Jan 14 12:37:59 2026 +0000
+
+    feat: Enhance ComparisonView with player comparison charts and improved UI components
+    
+    - Added player comparison charts to ComparisonView for better analysis of selected players.
+    - Refactored UI components for improved layout and usability, including filter panel integration.
+    - Simplified ranking and chart rendering logic for better performance and readability.
+    - Updated TrendsView to include filter panel for consistent filtering options across views.
+
+[33mcommit be44b15b11fb39d7f14548f27e3b0bd0f0cb7158[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Wed Jan 14 10:13:44 2026 +0000
+
+    feat: add DashboardView and TrendsView components with various charts and data visualizations
+
+[33mcommit f32e5f894cf041ad62accfab8a9d82e36df935e7[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Wed Jan 14 02:00:52 2026 +0000
+
+    fix: Change chart line and area types to monotone for better visualization
+
+[33mcommit b4855436d65ee90531564934b64ff6be4733545f[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Wed Jan 14 01:32:55 2026 +0000
+
+    feat: Update player comparison feature to remove selection limit and enhance CSV parsing
+
+[33mcommit f08f8f481f2de7e9f0f0f56a6bc61806666a9212[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Wed Jan 14 00:22:36 2026 +0000
+
+    fix: Enhance date parsing logic to validate format and range, returning null for invalid dates
+
+[33mcommit 4ccf99786d06239660692a7f5fbfe5e40bd59c5f[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Wed Jan 14 00:14:00 2026 +0000
+
+    fix: Update date parsing logic to return null for invalid dates
+
+[33mcommit 173d2b38c5124b8c2355c4be13005bb3d5802a16[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Wed Jan 14 00:00:43 2026 +0000
+
+    feat: Update GitHub Actions workflow to include permissions for deployment
+
+[33mcommit 4faed67b19b2b4c0e7a627b671eee5da82ff8fd8[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 23:57:43 2026 +0000
+
+    Remove universalify package and its dependencies from package-lock.json
+
+[33mcommit b5e6dcf17d0838775efdc1a296abe08e06ada904[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 23:47:10 2026 +0000
+
+    feat: Add GitHub Actions workflow for deployment to GitHub Pages
+
+[33mcommit f88f7fe56f48869ef5690fb36241f8f10835cc87[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 23:21:38 2026 +0000
+
+    feat: Add multi-player comparison feature with trend analysis
+    
+    - Introduced a new player comparison mode allowing users to select up to 5 players for performance trend analysis.
+    - Implemented comparison trend data calculations for both batting and pitching metrics.
+    - Enhanced the FilterPanel component with memoization to prevent unnecessary re-renders.
+    - Added new color palette for comparison charts.
+    - Updated UI to include buttons for selecting comparison types and displaying relevant charts.
+    - Improved state management for comparison metrics and selected players.
+    - Updated footer version to v1.6.
+
+[33mcommit 845ba15bfdd65a2a4eea3484ab2cac4467649fad[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 17:13:16 2026 +0000
+
+    .geminiignore ファイルを追加し、node_modules ディレクトリを無視する設定を追加
+
+[33mcommit 90386f41d91cf772566e202bf6b27cbcca8e24ba[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 16:38:23 2026 +0000
+
+    ゲームの対戦相手を表示するために日付フォーマットを変更し、データのソートロジックを改善
+
+[33mcommit 7866def6ca0ac894ba588ace921eedd84a224173[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 16:07:52 2026 +0000
+
+    ゲームのソートロジックを改善し、日付が同じ場合は対戦相手で比較するように変更
+
+[33mcommit 18c949290f00cdb13a17e9d6a0e7ab7cfe69a201[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 15:06:18 2026 +0000
+
+    日付解析ロジックを改善し、フィルターパネルコンポーネントを追加してフィルター機能を強化
+
+[33mcommit e6357a43b05dcf85563988de9ba5bb13c7652b22[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 14:23:26 2026 +0000
+
+    ゲームトレンド期間のソートロジックを改善し、日付の比較を最適化
+
+[33mcommit e7004b653d879c481ca69624a05d669e6aaa22fe[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 14:08:34 2026 +0000
+
+    日付のソートロジックを改善し、月次トレンドに基づくデータの整列を追加
+
+[33mcommit 0922b4c988ead052e2e9d6744107c6cb2b4130eb[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 13:47:26 2026 +0000
+
+    .gitignoreファイルを追加し、依存関係やビルド出力、ログファイル、システムファイルを無視する設定を追加
+
+[33mcommit d718beb614f2b29d4cfe612f8e9273420cceb5bb[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 13:47:16 2026 +0000
+
+    Remove obsolete CSV data and HTML template files from the project
+
+[33mcommit e906253546d2bea0540b4b87776cbc364e0606ec[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 13:38:42 2026 +0000
+
+    フィルターの初期値をuseMemoで設定し、リセット機能を改善
+
+[33mcommit e8247a53dac9aa9f4ae520557c336f294b22a603[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 13:33:05 2026 +0000
+
+    batting and pitching results sorting logic updated to handle game trend periods
+
+[33mcommit 73120a6e8cf69f77b71ee342710ae7ff0107f565[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Jan 13 12:32:44 2026 +0000
+
+    Fix sorting logic and update XAxis dataKey in AllChartsView
+
+[33mcommit 5e236dd41fc9b1b102ccde9af5220b5cac1416a3[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Mon Jan 12 09:39:06 2026 +0000
+
+    csv update
+
+[33mcommit a6053bd643023c91f27afcfd2686b38286fa9dca[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Mon Jan 12 09:35:59 2026 +0000
+
+    csv update
+
+[33mcommit da36b6ed96d7853f50316ff66996753a4e19a6df[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Wed Dec 10 15:54:07 2025 +0000
+
+    update
+
+[33mcommit 62be9ea2a91dad1445e31ce99e4c37366642e9a6[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Dec 9 23:48:47 2025 +0000
+
+    bug fix2
+
+[33mcommit 79d5ad1a35aef62cf81493847ef9dd8a1df005fe[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Dec 9 23:45:33 2025 +0000
+
+    bug fix
+
+[33mcommit 0829b24d0d6b907ca182894a3610535ca205ce88[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Dec 9 15:25:54 2025 +0000
+
+    bug fix
+
+[33mcommit d50db33a7f3ca69e351734cbdbe9c15b6984150c[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Tue Dec 9 15:18:39 2025 +0000
+
+    pre-release
+
+[33mcommit 67d2cbd740e21bdfb7ea7dc5073e9e4a154ab7a2[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Mon Dec 8 17:31:57 2025 +0000
+
+    sync
+
+[33mcommit 9151154b349e70dab6e7eab8ea5e6bf536b052f0[m
+Author: ssktgm <51650332+ssktgm@users.noreply.github.com>
+Date:   Mon Dec 8 02:17:29 2025 +0900
+
+    Initial commit
