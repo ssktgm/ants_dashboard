@@ -179,8 +179,9 @@ export default function App() {
     try {
       const [battingRes, pitchingRes] = await Promise.all([fetch(DEFAULT_BATTING_CSV_URL), fetch(DEFAULT_PITCHING_CSV_URL)]);
       const [battingText, pitchingText] = await Promise.all([battingRes.text(), pitchingRes.text()]);
-      setBattingData(parseCSV(battingText));
-      setPitchingData(parseCSV(pitchingText));
+      const filterAntos = (row) => `${row['先攻']}${row['後攻']}`.includes('ありんこアントス@');
+      setBattingData(parseCSV(battingText).filter(filterAntos));
+      setPitchingData(parseCSV(pitchingText).filter(filterAntos));
       const now = new Date().toLocaleString('ja-JP');
       setLastUpdated(now + " (サンプル)");
     } catch (error) {
@@ -195,7 +196,8 @@ export default function App() {
     let newBatting = [], newPitching = [];
     for (const file of files) {
       const text = await file.text();
-      const data = parseCSV(text);
+      const filterAntos = (row) => `${row['先攻']}${row['後攻']}`.includes('ありんこアントス@');
+      const data = parseCSV(text).filter(filterAntos);
       if (file.name.includes('_b.csv') || (data[0] && '打席数' in data[0])) newBatting = data;
       else if (file.name.includes('_p.csv') || (data[0] && ('投球回' in data[0] || '球数' in data[0]))) newPitching = data;
     }
